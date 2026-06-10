@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome Profile Launcher</title>
+    <title>Chrome Profile Launcher - User Panel</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -36,18 +36,20 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            transition: all 0.3s;
         }
         .status-icon { font-size: 50px; }
         .status-text { flex: 1; font-size: 16px; font-weight: 500; }
         .status-time { font-size: 12px; color: #666; }
         .device-id {
             background: #f0f0f0;
-            padding: 10px;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 12px;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 13px;
             margin: 15px 0;
             word-break: break-all;
+            text-align: center;
         }
         .btn {
             border: none;
@@ -72,11 +74,13 @@
             color: white;
             margin: 5px 0;
         }
-        .btn-download:hover {
-            background: #1b5e20;
-        }
         .btn-warning {
             background: #ff9800;
+            color: white;
+            margin: 5px 0;
+        }
+        .btn-danger {
+            background: #f44336;
             color: white;
             margin: 5px 0;
         }
@@ -130,10 +134,12 @@
             align-items: center;
             gap: 12px;
             cursor: pointer;
+            transition: all 0.2s;
         }
         .profile-item:hover {
             background: #e8f0fe;
             border-color: #0f3460;
+            transform: translateX(5px);
         }
         .profile-num {
             background: #0f3460;
@@ -162,37 +168,35 @@
             font-size: 11px;
             padding: 15px;
             border-radius: 10px;
-            max-height: 350px;
+            max-height: 400px;
             overflow: auto;
             margin: 10px 0;
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .refresh-btn {
-            background: #ff9800;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 8px 16px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-        .status-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
         .sync-box {
             background: #e3f2fd;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
             flex-wrap: wrap;
         }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-approved { background: #4caf50; color: white; }
+        .status-pending { background: #ff9800; color: white; }
+        .status-none { background: #f44336; color: white; }
+        .flex-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .flex-buttons button { flex: 1; }
     </style>
 </head>
 <body>
@@ -209,6 +213,24 @@
         <div class="status-time" id="statusTime"></div>
     </div>
 
+    <div class="card">
+        <h3>🔧 Device Configuration</h3>
+        
+        <div class="sync-box">
+            <span>🆔 <strong>Device ID:</strong></span>
+            <span id="deviceIdSpan" style="font-family:monospace; font-size:13px; font-weight:bold;">Loading...</span>
+            <button id="copyDeviceIdBtn" class="btn-download" style="padding:5px 15px; margin:0;">📋 Copy</button>
+            <button id="syncFromCmdBtn" class="btn-warning" style="padding:5px 15px; margin:0;">🔄 Sync from CMD</button>
+        </div>
+        
+        <div class="flex-buttons">
+            <button id="checkStatusBtn" class="btn-warning">🔄 Check Status</button>
+            <button id="forceApproveBtn" class="btn-danger" style="display:none;">⚠️ Force Approve (Admin Only)</button>
+        </div>
+        
+        <div id="statusBadge" style="text-align: center; margin-top: 10px;"></div>
+    </div>
+
     <div class="card" id="requestSection">
         <h3>📝 Request Access</h3>
         <p>You need admin approval to use this tool.</p>
@@ -218,13 +240,6 @@
             <input type="text" id="userName" placeholder="Enter your name" style="width:100%; padding:10px; margin-top:5px; border-radius:10px; border:1px solid #ddd;">
         </div>
 
-        <div class="sync-box">
-            <span>🆔 <strong>Device ID:</strong></span>
-            <span id="deviceIdSpan" style="font-family:monospace; font-size:12px;">Loading...</span>
-            <button id="copyDeviceIdBtn" class="btn-download" style="padding:5px 15px; margin:0;">📋 Copy</button>
-            <button id="syncFromCmdBtn" class="btn-warning" style="padding:5px 15px; margin:0;">🔄 Sync from CMD</button>
-        </div>
-
         <div class="instruction">
             <strong>📌 Instructions:</strong><br>
             1. Copy the code from the box below<br>
@@ -232,7 +247,8 @@
             3. Save as <strong>ChromeClient.bat</strong> (Save as type: All Files)<br>
             4. <strong>Right-click</strong> → <strong>Run as Administrator</strong><br>
             5. Keep the black window open!<br>
-            6. Enter your name above and click "Send Request"
+            6. Click "Sync from CMD" and paste the Device ID from CMD<br>
+            7. Enter your name above and click "Send Request"
         </div>
 
         <div class="code-box" id="batCode">
@@ -385,17 +401,11 @@ goto cmd_loop
         </div>
         
         <button id="copyBtn" class="btn btn-download" style="margin-top:10px;">📋 Copy BAT Code</button>
-
         <button id="sendRequestBtn" class="btn btn-primary" style="margin-top:15px;">📨 Send Request to Admin</button>
-        
-        <button id="refreshProfilesBtn" class="btn btn-warning" style="margin-top:10px;">🔄 Refresh Profiles</button>
     </div>
 
     <div class="card" id="launcherSection" style="display: none;">
-        <div class="status-row">
-            <h3>🚀 Launch Profiles</h3>
-            <button id="refreshProfilesBtn2" class="refresh-btn">🔄 Refresh</button>
-        </div>
+        <h3>🚀 Launch Profiles</h3>
         <div class="search-box">
             <input type="text" id="profileNumbers" placeholder="Example: 1,2,3 or 1 2 3 or ALL">
             <button onclick="launchProfiles()">▶ RUN</button>
@@ -424,13 +434,10 @@ goto cmd_loop
     // PERMANENT DEVICE ID SYSTEM
     // =============================================
     function generateDeviceId() {
-        // Generate a unique device ID based on multiple factors
         const screenRes = `${screen.width}x${screen.height}`;
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const language = navigator.language;
         const platform = navigator.platform;
-        
-        // Create a hash from browser fingerprint
         const fingerprint = `${screenRes}|${timezone}|${language}|${platform}`;
         let hash = 0;
         for (let i = 0; i < fingerprint.length; i++) {
@@ -438,49 +445,30 @@ goto cmd_loop
             hash |= 0;
         }
         const hashStr = Math.abs(hash).toString(36);
-        
         return `device_${hashStr}_${Date.now().toString(36)}`;
     }
 
     function getPermanentDeviceId() {
-        // Try multiple storage methods
         let id = null;
-        
-        // 1. Try localStorage
-        try {
-            id = localStorage.getItem('chrome_launcher_permanent_id');
-        } catch(e) {}
-        
-        // 2. Try sessionStorage
+        try { id = localStorage.getItem('chrome_launcher_permanent_id'); } catch(e) {}
         if (!id) {
-            try {
-                id = sessionStorage.getItem('chrome_launcher_permanent_id');
-            } catch(e) {}
+            try { id = sessionStorage.getItem('chrome_launcher_permanent_id'); } catch(e) {}
         }
-        
-        // 3. Try cookies (for cross-browser same domain)
         if (!id) {
             const cookies = document.cookie.split(';');
             for (let cookie of cookies) {
                 const [name, value] = cookie.trim().split('=');
-                if (name === 'device_id') {
-                    id = decodeURIComponent(value);
-                    break;
-                }
+                if (name === 'device_id') { id = decodeURIComponent(value); break; }
             }
         }
-        
-        // 4. Generate new if not exists
         if (!id) {
             id = generateDeviceId();
-            // Save to all storage methods
             try {
                 localStorage.setItem('chrome_launcher_permanent_id', id);
                 sessionStorage.setItem('chrome_launcher_permanent_id', id);
-                document.cookie = `device_id=${encodeURIComponent(id)}; path=/; max-age=31536000`; // 1 year
+                document.cookie = `device_id=${encodeURIComponent(id)}; path=/; max-age=31536000`;
             } catch(e) {}
         }
-        
         return id;
     }
 
@@ -494,6 +482,8 @@ goto cmd_loop
             localStorage.setItem('chrome_launcher_device_id', deviceId);
         } catch(e) {}
         document.getElementById('deviceIdSpan').innerHTML = deviceId;
+        updateStatusBadge('checking');
+        checkStatus();
         return deviceId;
     }
 
@@ -501,8 +491,24 @@ goto cmd_loop
         const cmdId = prompt('Enter the Device ID shown in CMD window:', deviceId);
         if (cmdId && cmdId.trim()) {
             setDeviceIdManually(cmdId.trim());
-            alert(`✅ Device ID synced: ${cmdId}\nPage will reload.`);
-            location.reload();
+            alert(`✅ Device ID synced: ${cmdId}\nChecking status...`);
+        }
+    }
+
+    function updateStatusBadge(status, expiresAt = null) {
+        const badgeDiv = document.getElementById('statusBadge');
+        if (status === 'approved') {
+            let timeText = '';
+            if (expiresAt) {
+                const expDate = new Date(expiresAt);
+                const daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
+                timeText = ` | Expires: ${expDate.toLocaleDateString()} (${daysLeft} days left)`;
+            }
+            badgeDiv.innerHTML = `<span class="status-badge status-approved">✅ APPROVED${timeText}</span>`;
+        } else if (status === 'pending') {
+            badgeDiv.innerHTML = `<span class="status-badge status-pending">⏳ PENDING - Waiting for Admin</span>`;
+        } else {
+            badgeDiv.innerHTML = `<span class="status-badge status-none">🔒 NO ACCESS - Send Request</span>`;
         }
     }
 
@@ -510,8 +516,15 @@ goto cmd_loop
     // API FUNCTIONS
     // =============================================
     async function checkStatus() {
+        if (!deviceId) {
+            console.error('No device ID');
+            return;
+        }
+        
         try {
             console.log('Checking status for device:', deviceId);
+            updateStatusBadge('checking');
+            
             const res = await fetch(`${API_BASE}/api/check-status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -529,6 +542,7 @@ goto cmd_loop
                     const daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
                     document.getElementById('statusTime').innerHTML = `Expires: ${expDate.toLocaleDateString()} (${daysLeft} days left)`;
                 }
+                updateStatusBadge('approved', data.expiresAt);
                 document.getElementById('requestSection').style.display = 'none';
                 document.getElementById('launcherSection').style.display = 'block';
                 await loadProfiles();
@@ -537,6 +551,7 @@ goto cmd_loop
                 document.getElementById('statusCard').style.background = '#fff3e0';
                 document.getElementById('statusIcon').innerHTML = '⏳';
                 document.getElementById('statusText').innerHTML = '⏳ Request Pending. Waiting for admin approval...';
+                updateStatusBadge('pending');
                 document.getElementById('requestSection').style.display = 'block';
                 document.getElementById('launcherSection').style.display = 'none';
             }
@@ -544,12 +559,14 @@ goto cmd_loop
                 document.getElementById('statusCard').style.background = '#ffebee';
                 document.getElementById('statusIcon').innerHTML = '🔒';
                 document.getElementById('statusText').innerHTML = '🔒 No Access. Send request to admin.';
+                updateStatusBadge('none');
                 document.getElementById('requestSection').style.display = 'block';
                 document.getElementById('launcherSection').style.display = 'none';
             }
         } catch(e) {
             console.error('Status check error:', e);
-            document.getElementById('statusText').innerHTML = 'Error checking status. Check console.';
+            document.getElementById('statusText').innerHTML = 'Error checking status. Check connection.';
+            updateStatusBadge('none');
         }
     }
 
@@ -636,7 +653,13 @@ goto cmd_loop
 
     async function sendRequest() {
         const userName = document.getElementById('userName').value.trim() || 'Anonymous';
+        if (!deviceId) {
+            alert('Device ID not set!');
+            return;
+        }
+        
         try {
+            console.log('Sending request for device:', deviceId);
             const res = await fetch(`${API_BASE}/api/request-access`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -648,6 +671,8 @@ goto cmd_loop
                 })
             });
             const data = await res.json();
+            console.log('Request response:', data);
+            
             if (data.success) {
                 alert('✅ Request sent to admin!');
                 checkStatus();
@@ -655,7 +680,8 @@ goto cmd_loop
                 alert('❌ ' + data.message);
             }
         } catch(e) {
-            alert('Network error');
+            console.error('Send request error:', e);
+            alert('Network error: ' + e.message);
         }
     }
 
@@ -695,6 +721,34 @@ goto cmd_loop
     }
 
     // =============================================
+    // FORCE CHECK - DIRECT API CALL
+    // =============================================
+    async function forceCheckStatus() {
+        if (!deviceId) {
+            alert('No Device ID set!');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE}/api/check-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId: deviceId })
+            });
+            const data = await response.json();
+            console.log('Force check result:', data);
+            
+            let message = `Status: ${data.status}\n`;
+            if (data.expiresAt) message += `Expires: ${new Date(data.expiresAt).toLocaleString()}`;
+            alert(message);
+            
+            checkStatus(); // Refresh UI
+        } catch(e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    // =============================================
     // INITIALIZATION
     // =============================================
     deviceId = getPermanentDeviceId();
@@ -705,14 +759,16 @@ goto cmd_loop
     document.getElementById('syncFromCmdBtn').addEventListener('click', syncFromCmd);
     document.getElementById('copyBtn').addEventListener('click', copyBatCode);
     document.getElementById('sendRequestBtn').addEventListener('click', sendRequest);
-    document.getElementById('refreshProfilesBtn').addEventListener('click', refreshProfiles);
-    document.getElementById('refreshProfilesBtn2').addEventListener('click', refreshProfiles);
+    document.getElementById('refreshProfilesBtn')?.addEventListener('click', refreshProfiles);
+    document.getElementById('refreshProfilesBtn2')?.addEventListener('click', refreshProfiles);
+    document.getElementById('checkStatusBtn').addEventListener('click', forceCheckStatus);
     window.launchSingle = launchSingle;
     window.launchProfiles = launchProfiles;
     window.setExample = setExample;
     
     // Start checking status
     checkStatus();
+    if (statusInterval) clearInterval(statusInterval);
     statusInterval = setInterval(checkStatus, 5000);
 </script>
 </body>
