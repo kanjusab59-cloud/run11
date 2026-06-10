@@ -5,24 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrome Profile Launcher</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
         }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
+        .container { max-width: 1000px; margin: 0 auto; }
         .header {
             background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
             color: white;
@@ -31,7 +21,6 @@
             text-align: center;
             margin-bottom: 20px;
         }
-
         .card {
             background: white;
             border-radius: 20px;
@@ -39,7 +28,6 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-
         .status-card {
             background: white;
             border-radius: 20px;
@@ -49,22 +37,9 @@
             align-items: center;
             gap: 15px;
         }
-
-        .status-icon {
-            font-size: 50px;
-        }
-
-        .status-text {
-            flex: 1;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .status-time {
-            font-size: 12px;
-            color: #666;
-        }
-
+        .status-icon { font-size: 50px; }
+        .status-text { flex: 1; font-size: 16px; font-weight: 500; }
+        .status-time { font-size: 12px; color: #666; }
         .device-id {
             background: #f0f0f0;
             padding: 10px;
@@ -74,7 +49,6 @@
             margin: 15px 0;
             word-break: break-all;
         }
-
         .btn {
             border: none;
             border-radius: 40px;
@@ -84,35 +58,30 @@
             transition: 0.2s;
             font-size: 14px;
         }
-
         .btn-primary {
             background: #0f3460;
             color: white;
             width: 100%;
         }
-
         .btn-primary:hover {
             background: #1e4a76;
             transform: translateY(-2px);
         }
-
         .btn-download {
             background: #2e7d32;
             color: white;
             margin: 5px 0;
         }
-
         .btn-download:hover {
             background: #1b5e20;
             transform: translateY(-2px);
         }
-
         .search-box {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
-
         .search-box input {
             flex: 1;
             padding: 12px;
@@ -120,7 +89,6 @@
             border-radius: 30px;
             font-size: 14px;
         }
-
         .search-box button {
             padding: 12px 25px;
             background: #0f3460;
@@ -130,13 +98,11 @@
             cursor: pointer;
             font-weight: bold;
         }
-
         .examples {
             font-size: 12px;
             color: #666;
             margin-bottom: 15px;
         }
-
         .examples span {
             background: #f0f0f0;
             padding: 4px 12px;
@@ -145,13 +111,11 @@
             cursor: pointer;
             display: inline-block;
         }
-
         .profile-list {
             max-height: 400px;
             overflow-y: auto;
             margin-top: 15px;
         }
-
         .profile-item {
             background: #fafafa;
             border: 1px solid #eee;
@@ -163,12 +127,10 @@
             gap: 12px;
             cursor: pointer;
         }
-
         .profile-item:hover {
             background: #f0f4ff;
             border-color: #0f3460;
         }
-
         .profile-num {
             background: #0f3460;
             color: white;
@@ -180,7 +142,6 @@
             justify-content: center;
             font-weight: bold;
         }
-
         .instruction {
             background: #f8f9fa;
             padding: 15px;
@@ -189,13 +150,8 @@
             font-size: 13px;
             line-height: 1.6;
         }
-
-        footer {
-            text-align: center;
-            font-size: 11px;
-            color: #aaa;
-            margin-top: 20px;
-        }
+        footer { text-align: center; font-size: 11px; color: #aaa; margin-top: 20px; }
+        .debug-info { background: #1e1e1e; color: #0f0; font-family: monospace; font-size: 10px; padding: 10px; border-radius: 8px; margin-top: 10px; max-height: 100px; overflow: auto; }
     </style>
 </head>
 <body>
@@ -212,7 +168,6 @@
         <div class="status-time" id="statusTime"></div>
     </div>
 
-    <!-- Request Section -->
     <div class="card" id="requestSection">
         <h3>📝 Request Access</h3>
         <p>You need admin approval to use this tool.</p>
@@ -224,10 +179,8 @@
 
         <div class="device-id" id="deviceIdDisplay"></div>
 
-        <!-- Download Buttons -->
         <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
             <button id="downloadBat1" class="btn btn-download">📥 Download ChromeClient.bat</button>
-            <button id="downloadBat2" class="btn btn-download">📥 Download Run-As-Admin.bat</button>
         </div>
 
         <div class="instruction">
@@ -242,7 +195,6 @@
         <button id="sendRequestBtn" class="btn btn-primary">📨 Send Request to Admin</button>
     </div>
 
-    <!-- Launcher Section (hidden initially) -->
     <div class="card" id="launcherSection" style="display: none;">
         <h3>🚀 Launch Profiles</h3>
         <div class="search-box">
@@ -269,7 +221,6 @@
     let currentProfiles = [];
     let statusInterval = null;
 
-    // Get or create device ID
     function getDeviceId() {
         let id = localStorage.getItem('chrome_launcher_device_id');
         if (!id) {
@@ -279,7 +230,6 @@
         return id;
     }
 
-    // Check status from server
     async function checkStatus() {
         try {
             const res = await fetch(`${API_BASE}/api/check-status`, {
@@ -288,6 +238,7 @@
                 body: JSON.stringify({ deviceId })
             });
             const data = await res.json();
+            console.log('Status response:', data);
 
             if (data.status === 'approved') {
                 document.getElementById('statusCard').style.background = '#e8f5e9';
@@ -321,7 +272,6 @@
         }
     }
 
-    // Load profiles from server
     async function loadProfiles() {
         try {
             const res = await fetch(`${API_BASE}/api/get-device-profiles`, {
@@ -363,7 +313,6 @@
         container.innerHTML = html;
     }
 
-    // Launch functions
     async function launchSingle(num) {
         await launchNumbers([num]);
     }
@@ -406,7 +355,6 @@
         }
     }
 
-    // Send request to admin
     async function sendRequest() {
         const userName = document.getElementById('userName').value.trim() || 'Anonymous';
         try {
@@ -447,7 +395,7 @@
         });
     }
 
-    // ============= BAT FILE GENERATION (CLEAN WORKING VERSION) =============
+    // ============= FIXED BAT FILE =============
     function getChromeClientBat() {
         return `@echo off
 title Chrome Launcher Client
@@ -456,7 +404,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ==============================================
-echo      Chrome Launcher Client
+echo      Chrome Launcher Client v3.0
 echo ==============================================
 echo.
 
@@ -472,9 +420,9 @@ if exist "%CONFIG_FILE%" (
 
 :: Find Chrome
 set "CHROME_PATH="
-if exist "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-if exist "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-if exist "%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe"
+if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
 
 if "%CHROME_PATH%"=="" (
     echo [ERROR] Chrome not found!
@@ -483,12 +431,11 @@ if "%CHROME_PATH%"=="" (
 )
 
 :: Detect profiles
-set "PROFILES_DIR=%LOCALAPPDATA%\\Google\\Chrome\\User Data"
+set "PROFILES_DIR=%LOCALAPPDATA%\Google\Chrome\User Data"
 set PROFILE_COUNT=0
-set "PROFILE_LIST="
 
-for /d %%D in ("%PROFILES_DIR%\\*") do (
-    if exist "%%D\\Preferences" (
+for /d %%D in ("%PROFILES_DIR%\*") do (
+    if exist "%%D\Preferences" (
         set /a PROFILE_COUNT+=1
         set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"
         set "PROFILE_NAME_!PROFILE_COUNT!=%%~nxD"
@@ -506,82 +453,67 @@ echo.
 
 :: Register device
 echo [1/2] Registering device...
-powershell -Command "$body = '{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":[],\"userName\":\"%USERNAME%\"}'; try { Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' } catch { }" >nul 2>&1
-echo [OK] Registered!
+powershell -Command "$body = '{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":[],\"userName\":\"%USERNAME%\"}'; try { Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 10 } catch { }" >nul 2>&1
+echo [OK] Device Registered!
 echo.
 
-echo [2/2] Waiting for admin approval...
+echo [2/2] Checking approval status...
 echo.
 
-:wait_loop
-for /f %%a in ('powershell -Command "try { (Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json').status } catch { 'none' }" 2^>nul') do set "STATUS=%%a"
+:check_approval
+for /f "delims=" %%a in ('powershell -Command "try { (Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json' -TimeoutSec 10).status } catch { 'error' }" 2^>nul') do set "STATUS=%%a"
 
-if "%STATUS%"=="approved" goto launch_loop
-if "%STATUS%"=="pending" (
-    echo Waiting for admin approval...
-    timeout /t 5 /nobreak >nul
-    goto wait_loop
+echo [DEBUG] Status: %STATUS%
+
+if "%STATUS%"=="approved" (
+    echo.
+    echo ==============================================
+    echo  APPROVED! Monitoring for launch commands...
+    echo ==============================================
+    echo.
+    goto monitor
 )
-timeout /t 5 /nobreak >nul
-goto wait_loop
 
-:launch_loop
+if "%STATUS%"=="pending" (
+    echo Waiting for admin approval... (Pending)
+    timeout /t 5 /nobreak >nul
+    goto check_approval
+)
+
+if "%STATUS%"=="error" (
+    echo Checking again...
+    timeout /t 3 /nobreak >nul
+    goto check_approval
+)
+
+echo Unknown status: %STATUS% - retrying...
+timeout /t 3 /nobreak >nul
+goto check_approval
+
+:monitor
+echo Monitoring for launch commands...
 echo.
-echo ==============================================
-echo  APPROVED! Monitoring for launch commands...
-echo ==============================================
-echo.
 
-:cmd_loop
-for /f "delims=" %%a in ('powershell -Command "try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json'; if($r.success -and $r.commands) { $r.commands } }" 2^>nul') do set "CMDS=%%a"
+:command_loop
+for /f "delims=" %%a in ('powershell -Command "try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json' -TimeoutSec 10; if($r.success -and $r.commands) { $r.commands } }" 2^>nul') do set "CMDS=%%a"
 
-echo !CMDS! | findstr "launch" >nul
-if not errorlevel 1 (
-    echo Launching Chrome profiles...
+if not "%CMDS%"=="" (
+    echo Launch command received!
     for /l %%i in (1,1,%PROFILE_COUNT%) do (
         echo !CMDS! | findstr "%%i" >nul
         if not errorlevel 1 (
+            echo   Opening profile %%i
             start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
+            timeout /t 2 /nobreak >nul
         )
     )
 )
 
 timeout /t 3 /nobreak >nul
-goto cmd_loop
+goto command_loop
 `;
     }
 
-    function getRunAsAdminBat() {
-        return `@echo off
-:: Request admin rights
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    powershell start -verb runas '%0'
-    exit /b
-)
-
-echo Running with admin privileges...
-echo Creating Chrome Client...
-
-:: Create the client file in same folder
-set "CLIENT_FILE=%~dp0ChromeClient_auto.bat"
-
-(
-${getChromeClientBat().replace(/\n/g, '\r\n')}
-) > "%CLIENT_FILE%"
-
-echo Starting client...
-call "%CLIENT_FILE%"
-
-if errorlevel 1 (
-    echo.
-    echo If client failed, manually download ChromeClient.bat from website.
-    pause
-)
-`;
-    }
-
-    // Download handlers
     document.getElementById('downloadBat1').addEventListener('click', function() {
         const content = getChromeClientBat();
         const blob = new Blob([content], { type: 'application/batch' });
@@ -599,31 +531,13 @@ if errorlevel 1 (
         setTimeout(() => { btn.textContent = '📥 Download ChromeClient.bat'; }, 2000);
     });
 
-    document.getElementById('downloadBat2').addEventListener('click', function() {
-        const content = getRunAsAdminBat();
-        const blob = new Blob([content], { type: 'application/batch' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Run-As-Admin.bat';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        const btn = this;
-        btn.textContent = '✅ Downloaded!';
-        setTimeout(() => { btn.textContent = '📥 Download Run-As-Admin.bat'; }, 2000);
-    });
-
     document.getElementById('sendRequestBtn').addEventListener('click', sendRequest);
     window.launchSingle = launchSingle;
     window.launchProfiles = launchProfiles;
     window.setExample = setExample;
 
-    // Initialize
     deviceId = getDeviceId();
-    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: <strong>${deviceId}</strong><br><span style="font-size:11px;">(copy this if admin asks)</span>`;
+    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: <strong>${deviceId}</strong>`;
     checkStatus();
     statusInterval = setInterval(checkStatus, 5000);
 </script>
