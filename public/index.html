@@ -44,7 +44,6 @@
             opacity: 0.85;
         }
 
-        /* Status Card */
         .status-card {
             background: white;
             border-radius: 20px;
@@ -74,7 +73,6 @@
             font-family: monospace;
         }
 
-        /* Common Card */
         .request-card, .app-card {
             background: white;
             border-radius: 24px;
@@ -136,59 +134,47 @@
 
         .profiles-preview {
             background: #f8fafc;
-            padding: 0;
+            padding: 20px;
             border-radius: 20px;
             margin: 18px 0;
-            overflow: hidden;
         }
 
-        /* Code & instruction block */
-        .code-block {
-            background: #1e1e2f;
-            color: #f8fafc;
-            padding: 16px;
-            border-radius: 16px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-            margin: 12px 0;
-            border: 1px solid #334155;
-        }
-
-        .copy-btn {
-            background: #2d3e5f;
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #0f3460 0%, #1e4a76 100%);
             color: white;
-            border: none;
-            padding: 6px 16px;
+            text-decoration: none;
+            padding: 14px 28px;
             border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            text-align: center;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 5px;
             transition: 0.2s;
+            border: none;
+            width: 100%;
         }
 
-        .copy-btn:hover {
+        .download-btn:hover {
+            transform: translateY(-2px);
             background: #0f3460;
         }
 
         .instruction-step {
             background: #0f172a;
-            padding: 12px 16px;
-            border-radius: 14px;
+            padding: 16px;
+            border-radius: 16px;
             margin-top: 20px;
             color: #e2e8f0;
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .instruction-step strong {
             color: #facc15;
         }
 
-        /* Search & Launch */
         .search-box {
             display: flex;
             gap: 14px;
@@ -224,7 +210,6 @@
 
         .search-box button:hover {
             transform: translateY(-2px);
-            background: #0f3460;
         }
 
         .examples {
@@ -242,7 +227,6 @@
             cursor: pointer;
             display: inline-block;
             font-size: 12px;
-            transition: 0.2s;
         }
 
         .examples span:hover {
@@ -351,153 +335,46 @@
         <p>Launch your Chrome profiles after admin approval</p>
     </div>
 
-    <!-- Status section -->
     <div class="status-card" id="statusCard">
         <div class="status-icon" id="statusIcon">⏳</div>
         <div class="status-text" id="statusText">Checking access status...</div>
         <div class="status-time" id="statusTime"></div>
     </div>
 
-    <!-- Request section (visible when no access) -->
     <div class="request-card" id="requestCard" style="display: none;">
         <h3>📝 Request Access</h3>
         <p style="margin-bottom: 8px;">You need admin approval to use this tool.</p>
 
         <div class="user-info">
-            <label>👤 Your Name (optional but recommended):</label>
+            <label>👤 Your Name (recommended):</label>
             <input type="text" id="userName" placeholder="e.g., John Doe / Company Name">
         </div>
 
         <div class="device-id" id="deviceIdDisplay"></div>
 
-        <!-- 📌 সরাসরি কোড দেখানো + ক্লায়েন্ট তৈরির নির্দেশনা -->
-        <div class="profiles-preview" id="profilesPreview">
-            <div style="background: #0f172a; color: #e2e8f0; padding: 20px; border-radius: 20px;">
-                <div style="color: #4ade80; font-weight: bold; margin-bottom: 12px;">⚙️ Step 1 — Create Chrome Client (one time)</div>
-                
-                <div style="margin-bottom: 20px;">
-                    <div style="color: #facc15; margin-bottom: 6px;">📄 File 1: <strong>chrome-client.js</strong></div>
-                    <div class="code-block" id="clientCodeBlock">
-const axios = require('axios');<br>
-const { exec } = require('child_process');<br>
-const fs = require('fs');<br>
-const path = require('path');<br>
-const os = require('os');<br>
-<br>
-const RAILWAY_URL = 'https://run11-production.up.railway.app';<br>
-const DEVICE_ID_FILE = path.join(os.homedir(), '.chrome_launcher_device_id.txt');<br>
-<br>
-function getDeviceId() {<br>
-    if (fs.existsSync(DEVICE_ID_FILE)) return fs.readFileSync(DEVICE_ID_FILE, 'utf8').trim();<br>
-    const newId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);<br>
-    fs.writeFileSync(DEVICE_ID_FILE, newId);<br>
-    return newId;<br>
-}<br>
-<br>
-function getChromePath() {<br>
-    const paths = [<br>
-        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',<br>
-        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',<br>
-        process.env.LOCALAPPDATA + '\\Google\\Chrome\\Application\\chrome.exe'<br>
-    ];<br>
-    for (const p of paths) if (fs.existsSync(p)) return p;<br>
-    return null;<br>
-}<br>
-<br>
-function getAllProfiles() {<br>
-    const profilesDir = path.join(process.env.LOCALAPPDATA, 'Google\\Chrome\\User Data');<br>
-    if (!fs.existsSync(profilesDir)) return [];<br>
-    const folders = fs.readdirSync(profilesDir);<br>
-    const profiles = [];<br>
-    for (const folder of folders) {<br>
-        const prefFile = path.join(profilesDir, folder, 'Preferences');<br>
-        if (fs.existsSync(prefFile)) {<br>
-            let name = folder;<br>
-            try { const data = fs.readFileSync(prefFile, 'utf8'); const match = data.match(/"name":"([^"]+)"/); if (match) name = match[1]; } catch(e) {}<br>
-            if (folder === 'Default') name = 'Default';<br>
-            const hasPicture = fs.existsSync(path.join(profilesDir, folder, 'Google Profile Picture.png'));<br>
-            profiles.push({ name, folder, hasPicture });<br>
-        }<br>
-    }<br>
-    return profiles;<br>
-}<br>
-<br>
-async function registerDevice(profiles) {<br>
-    try { await axios.post(`${RAILWAY_URL}/api/register-device`, { deviceId, deviceName: os.hostname(), profiles, userName: os.userInfo().username }); } catch(e) {}<br>
-}<br>
-<br>
-async function checkCommands() {<br>
-    try {<br>
-        const response = await axios.post(`${RAILWAY_URL}/api/get-commands`, { deviceId });<br>
-        if (response.data.success && response.data.commands.length) {<br>
-            const chromePath = getChromePath();<br>
-            if (!chromePath) return;<br>
-            for (const cmd of response.data.commands) {<br>
-                if (cmd.type === 'launch') {<br>
-                    const profiles = getAllProfiles();<br>
-                    for (const num of cmd.numbers) {<br>
-                        if (num >= 1 && num <= profiles.length) {<br>
-                            exec(`start "" "${chromePath}" --profile-directory="${profiles[num-1].folder}" "https://www.facebook.com"`);<br>
-                        }<br>
-                    }<br>
-                }<br>
-            }<br>
-        }<br>
-    } catch(e) {}<br>
-}<br>
-<br>
-const deviceId = getDeviceId();<br>
-console.log(`🆔 Device ID: ${deviceId}`);<br>
-console.log(`🌐 Server: ${RAILWAY_URL}`);<br>
-registerDevice(getAllProfiles());<br>
-setInterval(() => registerDevice(getAllProfiles()), 10000);<br>
-setInterval(checkCommands, 3000);<br>
-                    </div>
-                    <button class="copy-btn" onclick="copyCodeBlock('clientCodeBlock')">📋 Copy chrome-client.js</button>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <div style="color: #facc15; margin-bottom: 6px;">📄 File 2: <strong>run-client.bat</strong></div>
-                    <div class="code-block" id="batchCodeBlock">
-@echo off<br>
-title Chrome Launcher Client<br>
-color 0A<br>
-echo ========================================<br>
-echo    Chrome Launcher Client Setup<br>
-echo ========================================<br>
-where node >nul 2>nul<br>
-if %errorlevel% neq 0 (<br>
-    echo ❌ Node.js not installed! Download from https://nodejs.org/<br>
-    pause<br>
-    exit /b<br>
-)<br>
-echo 📦 Installing axios...<br>
-npm install axios<br>
-echo ✅ Ready!<br>
-echo.<br>
-echo 🚀 Starting Chrome Client...<br>
-node chrome-client.js<br>
-pause<br>
-                    </div>
-                    <button class="copy-btn" onclick="copyCodeBlock('batchCodeBlock')">📋 Copy run-client.bat</button>
-                </div>
-
-                <div class="instruction-step">
-                    <strong>📌 How to use (copy-paste method):</strong><br>
-                    1️⃣ Create a new folder on your Desktop: <strong>chrome-client</strong><br>
-                    2️⃣ Open Notepad → paste chrome-client.js code → save as <strong>chrome-client.js</strong><br>
-                    3️⃣ Again Notepad → paste run-client.bat code → save as <strong>run-client.bat</strong><br>
-                    4️⃣ Double-click <strong>run-client.bat</strong> → a window will show your Device ID<br>
-                    5️⃣ After that, click below <strong>"Send Request to Admin"</strong> button.<br>
-                    ✅ No download needed — just copy, paste, save!
-                </div>
+        <div class="profiles-preview">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <span style="font-size: 48px;">🖥️</span>
+                <h4 style="margin-top: 5px;">Step 1: Download Chrome Client</h4>
+            </div>
+            
+            <button id="downloadBatBtn" class="download-btn">⬇️ Download ChromeClient.bat</button>
+            
+            <div class="instruction-step">
+                <strong>📌 How to use:</strong><br>
+                1️⃣ Click the button above to download <strong>ChromeClient.bat</strong><br>
+                2️⃣ Save the file to your Desktop (or any folder)<br>
+                3️⃣ Double-click <strong>ChromeClient.bat</strong> to run it<br>
+                4️⃣ A black window will open — keep it running!<br>
+                5️⃣ Enter your name above and click <strong>"Send Request to Admin"</strong><br>
+                6️⃣ After admin approves, Chrome will open automatically<br><br>
+                ⚠️ <strong>Note:</strong> If Windows shows a warning, click "More info" then "Run anyway"
             </div>
         </div>
 
         <button class="btn btn-primary" id="sendRequestBtn" onclick="requestAccess()">📨 Send Request to Admin</button>
     </div>
 
-    <!-- Main launcher (shown after approval) -->
     <div class="app-card" id="appCard" style="display: none;">
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Example: 1,2,3  or  1 2 3  or  ALL">
@@ -517,7 +394,6 @@ pause<br>
 </div>
 
 <script>
-    // ------------------- Helper Functions -------------------
     let deviceId = null;
     let profiles = [];
 
@@ -718,23 +594,108 @@ pause<br>
         });
     }
 
-    function copyCodeBlock(elementId) {
-        const element = document.getElementById(elementId);
-        let rawText = element.innerText;
-        navigator.clipboard.writeText(rawText).then(() => {
-            alert('✅ Code copied to clipboard!');
-        }).catch(() => {
-            alert('⚠️ Could not copy, but you can select manually.');
-        });
-    }
-
     let intervalId = null;
     function checkStatusPeriodically() {
         if (intervalId) clearInterval(intervalId);
         intervalId = setInterval(checkStatus, 7000);
     }
 
-    // ------------------- INIT -------------------
+    // =============================================
+    // One-Click BAT File Download (Base64 Encoded)
+    // =============================================
+    function getBatFileContent() {
+        return `@echo off
+title Chrome Profile Launcher Client
+color 0A
+setlocal enabledelayedexpansion
+
+set "SERVER_URL=https://run11-production.up.railway.app"
+set "CONFIG_FILE=%USERPROFILE%\\.chrome_client_config.txt"
+
+if exist "%CONFIG_FILE%" (
+    set /p DEVICE_ID=<"%CONFIG_FILE%"
+) else (
+    set "DEVICE_ID=device_%RANDOM%%RANDOM%%RANDOM%"
+    echo !DEVICE_ID! > "%CONFIG_FILE%"
+)
+
+set "CHROME_PATH="
+if exist "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+if exist "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+if exist "%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe"
+
+if "%CHROME_PATH%"=="" (
+    echo [ERROR] Chrome not found!
+    pause
+    exit /b
+)
+
+set "PROFILES_DIR=%LOCALAPPDATA%\\Google\\Chrome\\User Data"
+set PROFILE_COUNT=0
+
+for /d %%D in ("%PROFILES_DIR%\\*") do (
+    if exist "%%D\\Preferences" (
+        set /a PROFILE_COUNT+=1
+        set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"
+        set "PROFILE_NAME_!PROFILE_COUNT!=%%~nxD"
+    )
+)
+
+cls
+echo.
+echo ==============================================
+echo     Chrome Launcher Client Started
+echo ==============================================
+echo.
+echo Device ID: %DEVICE_ID%
+echo Server: %SERVER_URL%
+echo.
+echo Detected %PROFILE_COUNT% Chrome profile(s)
+echo.
+echo Waiting for admin approval...
+echo Keep this window open!
+echo.
+
+powershell -Command "try { Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Headers @{'Content-Type'='application/json'} -Body ('{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":[],\"userName\":\"%USERNAME%\"}') } catch { }" >nul 2>&1
+
+:loop
+for /f "delims=" %%a in ('powershell -Command "try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Headers @{'Content-Type'='application/json'} -Body ('{\"deviceId\":\"%DEVICE_ID%\"}'); $r.status } catch { 'error' }" 2^>nul') do set "STATUS=%%a"
+
+if "%STATUS%"=="approved" (
+    echo.
+    echo Approved! Checking commands...
+    powershell -Command "$r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Headers @{'Content-Type'='application/json'} -Body ('{\"deviceId\":\"%DEVICE_ID%\"}'); if ($r.success -and $r.commands) { $r.commands | ConvertTo-Json }" > "%TEMP%\\commands.json" 2>nul
+    findstr /c:"\"numbers\"" "%TEMP%\\commands.json" >nul
+    if not errorlevel 1 (
+        for /l %%i in (1,1,%PROFILE_COUNT%) do (
+            findstr /c:"%%i" "%TEMP%\\commands.json" >nul
+            if not errorlevel 1 (
+                echo Opening profile %%i
+                start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
+                timeout /t 2 >nul
+            )
+        )
+    )
+)
+
+timeout /t 5 >nul
+goto loop
+`;
+    }
+
+    document.getElementById('downloadBatBtn').addEventListener('click', function() {
+        const batContent = getBatFileContent();
+        const blob = new Blob([batContent], { type: 'application/batch' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ChromeClient.bat';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
     deviceId = getDeviceIdFromLocal();
     document.getElementById('deviceIdDisplay').innerHTML = `🆔 Your Device ID:<br> <strong style="font-size:14px;">${deviceId}</strong>`;
     checkStatus();
