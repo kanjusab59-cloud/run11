@@ -12,7 +12,7 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         .header {
             background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
             color: white;
@@ -23,7 +23,7 @@
         }
         .stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
             margin-bottom: 25px;
         }
@@ -51,6 +51,10 @@
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 12px;
+        }
+        .request-card.approved {
+            background: #e8f5e9;
+            border-color: #4caf50;
         }
         .request-header {
             display: flex;
@@ -119,6 +123,19 @@
             font-size: 20px;
             cursor: pointer;
         }
+        .debug-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #ff9800;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
         .log {
             background: #1e1e1e;
             color: #0f0;
@@ -126,7 +143,7 @@
             font-size: 11px;
             padding: 10px;
             border-radius: 8px;
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
         }
     </style>
@@ -142,11 +159,15 @@
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-number" id="pendingCount">0</div>
-                <div>⏳ Pending Requests</div>
+                <div>⏳ Pending</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="approvedCount">0</div>
-                <div>✅ Approved Users</div>
+                <div>✅ Approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="deviceCount">0</div>
+                <div>📱 Devices</div>
             </div>
         </div>
 
@@ -170,7 +191,8 @@
         </div>
     </div>
 
-    <button class="refresh-btn" onclick="loadData()">🔄</button>
+    <button class="refresh-btn" onclick="loadAll()">🔄</button>
+    <button class="debug-btn" onclick="showDebug()">🐛</button>
 
     <script>
         let socket = null;
@@ -179,9 +201,18 @@
             const logDiv = document.getElementById('log');
             const time = new Date().toLocaleTimeString();
             logDiv.innerHTML = `[${time}] ${message}<br>` + logDiv.innerHTML;
+            if (logDiv.children.length > 50) {
+                logDiv.innerHTML = logDiv.innerHTML.split('<br>').slice(0, 50).join('<br>');
+            }
         }
 
-        async function loadData() {
+        async function loadAll() {
+            addLog('Loading data...');
+            await loadRequests();
+            await loadDebug();
+        }
+
+        async function loadRequests() {
             try {
                 const response = await fetch('/api/admin/requests');
                 const requests = await response.json();
@@ -195,10 +226,19 @@
                 displayPending(pending);
                 displayApproved(approved);
                 
-                addLog(`📊 Loaded: ${pending.length} pending, ${approved.length} approved`);
+                addLog(`Loaded: ${pending.length} pending, ${approved.length} approved`);
             } catch(e) {
-                addLog(`❌ Error: ${e.message}`);
+                addLog(`Error loading requests: ${e.message}`);
             }
+        }
+
+        async function loadDebug() {
+            try {
+                const response = await fetch('/api/admin/debug');
+                const data = await response.json();
+                const deviceCount = Object.keys(data.devices || {}).length;
+                document.getElementById('deviceCount').innerHTML = deviceCount;
+            } catch(e) {}
         }
 
         function displayPending(requests) {
@@ -214,7 +254,7 @@
                 html += `
                     <div class="request-card" id="req_${req.deviceId}">
                         <div class="request-header">
-                            <span>🆔 ${req.deviceId.substring(0, 30)}...</span>
+                            <span>🆔 ${req.deviceId.substring(0, 40)}...</span>
                             <span>📅 ${new Date(req.timestamp).toLocaleString()}</span>
                         </div>
                         <div class="request-device">
@@ -223,7 +263,7 @@
                         <div class="profile-tags">
                             ${req.profiles && req.profiles.length > 0 ? 
                                 req.profiles.map(p => `<span class="profile-tag">${p.name || p}</span>`).join('') : 
-                                '<span class="profile-tag">No profiles detected yet</span>'}
+                                '<span class="profile-tag">No profiles yet</span>'}
                         </div>
                         <div class="actions">
                             <select id="hours_${req.deviceId}">
@@ -257,9 +297,9 @@
                 const expiresAt = new Date(req.expiresAt || req.approvedAt);
                 const isExpired = expiresAt < new Date();
                 html += `
-                    <div class="request-card" style="${isExpired ? 'background:#ffebee;' : ''}">
+                    <div class="request-card ${isExpired ? 'expired' : 'approved'}" style="${isExpired ? 'background:#ffebee;' : ''}">
                         <div class="request-header">
-                            <span>🆔 ${req.deviceId.substring(0, 30)}...</span>
+                            <span>🆔 ${req.deviceId.substring(0, 40)}...</span>
                             <span>👤 ${req.userName || 'Anonymous'}</span>
                         </div>
                         <div class="request-device">
@@ -275,9 +315,7 @@
             const hoursSelect = document.getElementById(`hours_${deviceId}`);
             const hours = hoursSelect ? hoursSelect.value : '24';
             
-            if (!confirm(`Approve ${userName || deviceId} for ${hours} hours?`)) return;
-            
-            addLog(`📝 Approving: ${deviceId} for ${hours} hours...`);
+            addLog(`Approving: ${deviceId} for ${hours} hours...`);
             
             try {
                 const response = await fetch('/api/admin/approve', {
@@ -291,7 +329,7 @@
                 if (data.success) {
                     addLog(`✅ APPROVED: ${deviceId} for ${hours} hours`);
                     alert(`✅ Approved successfully!`);
-                    loadData();
+                    loadAll();
                 } else {
                     addLog(`❌ Approval failed: ${data.message}`);
                     alert(`❌ Failed: ${data.message}`);
@@ -303,9 +341,7 @@
         }
 
         async function rejectRequest(deviceId) {
-            if (!confirm(`Reject this request?`)) return;
-            
-            addLog(`📝 Rejecting: ${deviceId}...`);
+            addLog(`Rejecting: ${deviceId}...`);
             
             try {
                 const response = await fetch('/api/admin/reject', {
@@ -319,14 +355,23 @@
                 if (data.success) {
                     addLog(`❌ REJECTED: ${deviceId}`);
                     alert(`✅ Rejected successfully!`);
-                    loadData();
+                    loadAll();
                 } else {
                     addLog(`❌ Reject failed`);
-                    alert(`❌ Failed to reject`);
                 }
             } catch(e) {
                 addLog(`❌ Error: ${e.message}`);
-                alert(`❌ Error: ${e.message}`);
+            }
+        }
+
+        async function showDebug() {
+            try {
+                const response = await fetch('/api/admin/debug');
+                const data = await response.json();
+                console.log('Debug data:', data);
+                alert(`Debug:\nPending: ${data.requests.filter(r => r.status === 'pending').length}\nApproved: ${Object.keys(data.approved).length}\nDevices: ${Object.keys(data.devices).length}\n\nCheck console for full data`);
+            } catch(e) {
+                alert('Debug error: ' + e.message);
             }
         }
 
@@ -334,21 +379,21 @@
             socket = io();
             socket.on('new-request', (data) => {
                 addLog(`🔔 New request from: ${data.userName || data.deviceId}`);
-                loadData();
+                loadAll();
             });
             socket.on('request-approved', (data) => {
                 addLog(`✅ Request approved for: ${data.deviceId}`);
-                loadData();
+                loadAll();
             });
             socket.on('request-rejected', (data) => {
                 addLog(`❌ Request rejected for: ${data.deviceId}`);
-                loadData();
+                loadAll();
             });
         }
 
         setupSocket();
-        loadData();
-        setInterval(loadData, 5000);
+        loadAll();
+        setInterval(loadAll, 5000);
     </script>
 </body>
 </html>
