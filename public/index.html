@@ -63,10 +63,17 @@
             color: white;
             width: 100%;
         }
+        .btn-primary:hover {
+            background: #1e4a76;
+            transform: translateY(-2px);
+        }
         .btn-download {
             background: #2e7d32;
             color: white;
             margin: 5px 0;
+        }
+        .btn-download:hover {
+            background: #1b5e20;
         }
         .search-box {
             display: flex;
@@ -119,6 +126,10 @@
             gap: 12px;
             cursor: pointer;
         }
+        .profile-item:hover {
+            background: #e8f0fe;
+            border-color: #0f3460;
+        }
         .profile-num {
             background: #0f3460;
             color: white;
@@ -146,9 +157,25 @@
             font-size: 11px;
             padding: 15px;
             border-radius: 10px;
-            max-height: 300px;
+            max-height: 350px;
             overflow: auto;
             margin: 10px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .refresh-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
     </style>
 </head>
@@ -188,126 +215,168 @@
         </div>
 
         <div class="code-box" id="batCode">
-@echo off<br>
-title Chrome Launcher Client<br>
-color 0A<br>
-setlocal enabledelayedexpansion<br>
-<br>
-echo.<br>
-echo ==============================================<br>
-echo      Chrome Launcher Client<br>
-echo ==============================================<br>
-echo.<br>
-<br>
-set "SERVER_URL=https://run11-production.up.railway.app"<br>
-set "CONFIG_FILE=%USERPROFILE%\.chrome_device.txt"<br>
-<br>
-if exist "%CONFIG_FILE%" (<br>
-    set /p DEVICE_ID=<"%CONFIG_FILE%"<br>
-) else (<br>
-    set "DEVICE_ID=device_%RANDOM%%RANDOM%%RANDOM%"<br>
-    echo !DEVICE_ID! > "%CONFIG_FILE%"<br>
-)<br>
-<br>
-set "CHROME_PATH="<br>
-if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"<br>
-if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"<br>
-if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"<br>
-<br>
-if "%CHROME_PATH%"=="" (<br>
-    echo [ERROR] Chrome not found!<br>
-    echo.<br>
-    set /p "CHROME_PATH=Enter Chrome path: "<br>
-)<br>
-<br>
-echo [OK] Chrome: %CHROME_PATH%<br>
-echo.<br>
-<br>
-set "PROFILES_DIR=%LOCALAPPDATA%\Google\Chrome\User Data"<br>
-set PROFILE_COUNT=0<br>
-<br>
-for /d %%D in ("%PROFILES_DIR%\*") do (<br>
-    if exist "%%D\Preferences" (<br>
-        set /a PROFILE_COUNT+=1<br>
-        set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"<br>
-        set "PROFILE_NAME_!PROFILE_COUNT!=%%~nxD"<br>
-        echo [!PROFILE_COUNT!] %%~nxD<br>
-    )<br>
-)<br>
-<br>
-echo.<br>
-echo Device ID: %DEVICE_ID%<br>
-echo Profiles Found: %PROFILE_COUNT%<br>
-echo.<br>
-<br>
-echo Sending request to server...<br>
-<br>
-:: Send registration<br>
-curl -X POST "%SERVER_URL%/api/register-device" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":[],\"userName\":\"%USERNAME%\"}" 2>nul<br>
-<br>
-:: Send request<br>
-curl -X POST "%SERVER_URL%/api/request-access" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"userName\":\"%USERNAME%\",\"profiles\":[]}" 2>nul<br>
-<br>
-echo.<br>
-echo Request sent to admin!<br>
-echo.<br>
-echo ==============================================<br>
-echo  Waiting for admin approval...<br>
-echo  Keep this window open!<br>
-echo ==============================================<br>
-echo.<br>
-<br>
-:wait_loop<br>
-timeout /t 5 /nobreak >nul<br>
-<br>
-:: Check status using curl<br>
-for /f %%a in ('curl -s -X POST "%SERVER_URL%/api/check-status" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\"}" 2^>nul') do set "RESPONSE=%%a"<br>
-<br>
-echo %RESPONSE% | findstr "approved" >nul<br>
-if not errorlevel 1 (<br>
-    echo.<br>
-    echo ==============================================<br>
-    echo  APPROVED! Ready to launch profiles<br>
-    echo ==============================================<br>
-    echo.<br>
-    goto monitor<br>
-)<br>
-<br>
-echo Waiting for admin approval...<br>
-goto wait_loop<br>
-<br>
-:monitor<br>
-echo Monitoring for launch commands...<br>
-echo.<br>
-<br>
-:cmd_loop<br>
-timeout /t 3 /nobreak >nul<br>
-<br>
-for /f %%a in ('curl -s -X POST "%SERVER_URL%/api/get-commands" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\"}" 2^>nul') do set "CMDS=%%a"<br>
-<br>
-echo %CMDS% | findstr "launch" >nul<br>
-if not errorlevel 1 (<br>
-    echo Launch command received!<br>
-    for /l %%i in (1,1,%PROFILE_COUNT%) do (<br>
-        echo %CMDS% | findstr "%%i" >nul<br>
-        if not errorlevel 1 (<br>
-            echo Opening profile %%i<br>
-            start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"<br>
-        )<br>
-    )<br>
-    echo.<br>
-)<br>
-<br>
+@echo off
+title Chrome Launcher Client
+color 0A
+setlocal enabledelayedexpansion
+
+echo.
+echo ==============================================
+echo      Chrome Launcher Client v4.0
+echo ==============================================
+echo.
+
+set "SERVER_URL=https://run11-production.up.railway.app"
+set "CONFIG_FILE=%USERPROFILE%\.chrome_device.txt"
+
+if exist "%CONFIG_FILE%" (
+    set /p DEVICE_ID=<"%CONFIG_FILE%"
+) else (
+    set "DEVICE_ID=device_%RANDOM%%RANDOM%%RANDOM%"
+    echo !DEVICE_ID! > "%CONFIG_FILE%"
+)
+
+:: Find Chrome
+set "CHROME_PATH="
+if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
+
+if "%CHROME_PATH%"=="" (
+    echo [ERROR] Chrome not found!
+    set /p "CHROME_PATH=Enter Chrome path: "
+)
+
+echo [OK] Chrome: %CHROME_PATH%
+echo.
+
+:: Detect profiles
+set "PROFILES_DIR=%LOCALAPPDATA%\Google\Chrome\User Data"
+set PROFILE_COUNT=0
+set "PROFILE_NAMES="
+set "PROFILE_FOLDERS="
+
+echo Detecting Chrome profiles...
+echo.
+
+for /d %%D in ("%PROFILES_DIR%\*") do (
+    if exist "%%D\Preferences" (
+        set /a PROFILE_COUNT+=1
+        set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"
+        
+        set "PROFILE_NAME=%%~nxD"
+        for /f "tokens=3 delims=:" %%A in ('findstr /c:"\"name\"" "%%D\Preferences" 2^>nul') do (
+            set "PROFILE_NAME=%%~A"
+            set "PROFILE_NAME=!PROFILE_NAME:"=!
+            set "PROFILE_NAME=!PROFILE_NAME:,=!
+        )
+        if "%%~nxD"=="Default" set "PROFILE_NAME=Default"
+        set "PROFILE_NAME_!PROFILE_COUNT!=!PROFILE_NAME!"
+        
+        echo   [!PROFILE_COUNT!] !PROFILE_NAME!
+        
+        if !PROFILE_COUNT! gtr 1 (
+            set "PROFILE_NAMES=!PROFILE_NAMES!,"
+            set "PROFILE_FOLDERS=!PROFILE_FOLDERS!,"
+        )
+        set "PROFILE_NAMES=!PROFILE_NAMES!\"!PROFILE_NAME!\""
+        set "PROFILE_FOLDERS=!PROFILE_FOLDERS!\"%%~nxD\""
+    )
+)
+
+echo.
+echo ==============================================
+echo  Device ID: %DEVICE_ID%
+echo  Profiles Found: %PROFILE_COUNT%
+echo ==============================================
+echo.
+
+:: Build JSON for profiles
+set "PROFILES_JSON=["
+for /l %%i in (1,1,%PROFILE_COUNT%) do (
+    if %%i gtr 1 set "PROFILES_JSON=!PROFILES_JSON!,"
+    set "PROFILES_JSON=!PROFILES_JSON!{\"name\":\"!PROFILE_NAME_%%i!\",\"folder\":\"!PROFILE_FOLDER_%%i!\",\"hasPicture\":false}"
+)
+set "PROFILES_JSON=!PROFILES_JSON!]"
+
+:: Register device with profiles
+echo [1/3] Registering device...
+curl -s -X POST "%SERVER_URL%/api/register-device" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":%PROFILES_JSON%,\"userName\":\"%USERNAME%\"}" >nul 2>&1
+echo [OK] Device registered!
+echo.
+
+:: Send request
+echo [2/3] Sending request to admin...
+curl -s -X POST "%SERVER_URL%/api/request-access" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"userName\":\"%USERNAME%\",\"profiles\":%PROFILES_JSON%}" >nul 2>&1
+echo [OK] Request sent!
+echo.
+
+echo [3/3] Waiting for admin approval...
+echo.
+echo ==============================================
+echo  Keep this window open!
+echo  Admin will approve from dashboard
+echo ==============================================
+echo.
+
+:wait_loop
+timeout /t 5 /nobreak >nul
+
+:: Check status
+for /f "delims=" %%a in ('curl -s -X POST "%SERVER_URL%/api/check-status" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\"}" 2^>nul') do set "RESPONSE=%%a"
+
+echo %RESPONSE% | findstr "approved" >nul
+if not errorlevel 1 (
+    echo.
+    echo ==============================================
+    echo  APPROVED! Ready to launch profiles
+    echo ==============================================
+    echo.
+    goto monitor
+)
+
+echo Waiting for admin approval...
+goto wait_loop
+
+:monitor
+echo Monitoring for launch commands...
+echo.
+
+:cmd_loop
+timeout /t 3 /nobreak >nul
+
+for /f "delims=" %%a in ('curl -s -X POST "%SERVER_URL%/api/get-commands" -H "Content-Type: application/json" -d "{\"deviceId\":\"%DEVICE_ID%\"}" 2^>nul') do set "CMDS=%%a"
+
+echo %CMDS% | findstr "launch" >nul
+if not errorlevel 1 (
+    echo.
+    echo [LAUNCH] Command received!
+    for /l %%i in (1,1,%PROFILE_COUNT%) do (
+        echo %CMDS% | findstr "%%i" >nul
+        if not errorlevel 1 (
+            echo   Opening profile %%i: !PROFILE_NAME_%%i!
+            start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
+            timeout /t 2 /nobreak >nul
+        )
+    )
+    echo.
+)
+
 goto cmd_loop
         </div>
         
         <button id="copyBtn" class="btn btn-download" style="margin-top:10px;">📋 Copy Code</button>
 
         <button id="sendRequestBtn" class="btn btn-primary" style="margin-top:15px;">📨 Send Request to Admin</button>
+        
+        <button id="refreshProfilesBtn" class="btn btn-download" style="margin-top:10px; background:#ff9800;">🔄 Refresh Profiles</button>
     </div>
 
     <div class="card" id="launcherSection" style="display: none;">
-        <h3>🚀 Launch Profiles</h3>
+        <div class="status-row">
+            <h3>🚀 Launch Profiles</h3>
+            <button id="refreshProfilesBtn2" class="refresh-btn">🔄 Refresh</button>
+        </div>
         <div class="search-box">
             <input type="text" id="profileNumbers" placeholder="Example: 1,2,3 or 1 2 3 or ALL">
             <button onclick="launchProfiles()">▶ RUN</button>
@@ -367,32 +436,40 @@ goto cmd_loop
                 document.getElementById('statusCard').style.background = '#fff3e0';
                 document.getElementById('statusIcon').innerHTML = '⏳';
                 document.getElementById('statusText').innerHTML = 'Request Pending. Waiting for admin approval...';
+                document.getElementById('requestSection').style.display = 'block';
+                document.getElementById('launcherSection').style.display = 'none';
             }
             else {
                 document.getElementById('statusCard').style.background = '#ffebee';
                 document.getElementById('statusIcon').innerHTML = '🔒';
                 document.getElementById('statusText').innerHTML = 'No Access. Download client and send request.';
+                document.getElementById('requestSection').style.display = 'block';
+                document.getElementById('launcherSection').style.display = 'none';
             }
         } catch(e) {
-            console.error(e);
+            console.error('Status check error:', e);
         }
     }
 
     async function loadProfiles() {
         try {
+            console.log('Loading profiles for device:', deviceId);
             const res = await fetch(`${API_BASE}/api/get-device-profiles`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ deviceId })
             });
             const data = await res.json();
+            console.log('Profiles response:', data);
+            
             if (data.success && data.profiles && data.profiles.length > 0) {
                 currentProfiles = data.profiles;
                 renderProfiles(currentProfiles);
             } else {
-                document.getElementById('profileList').innerHTML = '<div style="text-align:center; padding:20px;">📭 No profiles yet. Run ChromeClient.bat first.</div>';
+                document.getElementById('profileList').innerHTML = '<div style="text-align:center; padding:20px;">📭 No profiles found. Run ChromeClient.bat first.</div>';
             }
         } catch(e) {
+            console.error('Load profiles error:', e);
             document.getElementById('profileList').innerHTML = '<div style="text-align:center; padding:20px;">❌ Error loading profiles</div>';
         }
     }
@@ -445,7 +522,11 @@ goto cmd_loop
                 body: JSON.stringify({ deviceId, numbers })
             });
             const data = await res.json();
-            alert(data.success ? `✅ ${data.message}` : `❌ ${data.message}`);
+            if (data.success) {
+                alert(`✅ ${data.message}`);
+            } else {
+                alert(`❌ ${data.message}`);
+            }
         } catch(e) {
             alert('Failed to send launch command');
         }
@@ -476,6 +557,11 @@ goto cmd_loop
         }
     }
 
+    async function refreshProfiles() {
+        await loadProfiles();
+        alert('Profiles refreshed!');
+    }
+
     function setExample(val) {
         document.getElementById('profileNumbers').value = val;
         launchProfiles();
@@ -502,12 +588,14 @@ goto cmd_loop
     });
 
     document.getElementById('sendRequestBtn').addEventListener('click', sendRequest);
+    document.getElementById('refreshProfilesBtn').addEventListener('click', refreshProfiles);
+    document.getElementById('refreshProfilesBtn2').addEventListener('click', refreshProfiles);
     window.launchSingle = launchSingle;
     window.launchProfiles = launchProfiles;
     window.setExample = setExample;
 
     deviceId = getDeviceId();
-    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: <strong>${deviceId}</strong>`;
+    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: <strong>${deviceId}</strong><br><span style="font-size:11px;">(Same ID as shown in CMD)</span>`;
     checkStatus();
     statusInterval = setInterval(checkStatus, 5000);
 </script>
