@@ -27,7 +27,8 @@ if (!fs.existsSync(REQUESTS_FILE)) fs.writeFileSync(REQUESTS_FILE, JSON.stringif
 if (!fs.existsSync(APPROVED_FILE)) fs.writeFileSync(APPROVED_FILE, JSON.stringify({}));
 if (!fs.existsSync(DEVICES_FILE)) fs.writeFileSync(DEVICES_FILE, JSON.stringify({}));
 
-console.log('✅ Server started with data files');
+console.log('✅ Server started');
+console.log(`📁 Data folder: ${DATA_DIR}`);
 
 // ==================== API ROUTES ====================
 
@@ -44,7 +45,7 @@ app.post('/api/register-device', (req, res) => {
     };
     
     fs.writeFileSync(DEVICES_FILE, JSON.stringify(devices, null, 2));
-    console.log(`✅ Device registered: ${deviceId}`);
+    console.log(`✅ Device registered: ${deviceId} (${userName || 'Anonymous'})`);
     res.json({ success: true });
 });
 
@@ -53,7 +54,7 @@ app.post('/api/request-access', (req, res) => {
     const { deviceId, deviceName, userName, profiles } = req.body;
     const requests = JSON.parse(fs.readFileSync(REQUESTS_FILE));
     
-    // পুরনো পেন্ডিং রিকোয়েস্ট চেক
+    // চেক করা ইতিমধ্যে পেন্ডিং রিকোয়েস্ট আছে কিনা
     const existing = requests.find(r => r.deviceId === deviceId && r.status === 'pending');
     if (existing) {
         return res.json({ success: false, message: 'Request already pending!' });
@@ -74,7 +75,7 @@ app.post('/api/request-access', (req, res) => {
     // Socket.io নোটিফিকেশন
     io.emit('new-request', newRequest);
     
-    console.log(`📨 New request from: ${userName || deviceId}`);
+    console.log(`📨 New request from: ${userName || deviceId} (${deviceId})`);
     res.json({ success: true, message: 'Request sent to admin!' });
 });
 
@@ -83,6 +84,8 @@ app.post('/api/check-status', (req, res) => {
     const { deviceId } = req.body;
     const approved = JSON.parse(fs.readFileSync(APPROVED_FILE));
     const requests = JSON.parse(fs.readFileSync(REQUESTS_FILE));
+    
+    console.log(`🔍 Status check for: ${deviceId}`);
     
     const userApproved = approved[deviceId];
     const pendingRequest = requests.find(r => r.deviceId === deviceId && r.status === 'pending');
@@ -93,13 +96,17 @@ app.post('/api/check-status', (req, res) => {
             // এক্সপায়ার্ড
             delete approved[deviceId];
             fs.writeFileSync(APPROVED_FILE, JSON.stringify(approved, null, 2));
+            console.log(`⏰ Expired: ${deviceId}`);
             res.json({ status: 'expired' });
         } else {
+            console.log(`✅ Approved: ${deviceId}`);
             res.json({ status: 'approved', expiresAt: userApproved.expiresAt });
         }
     } else if (pendingRequest) {
+        console.log(`⏳ Pending: ${deviceId}`);
         res.json({ status: 'pending' });
     } else {
+        console.log(`❌ No access: ${deviceId}`);
         res.json({ status: 'none' });
     }
 });
@@ -136,7 +143,7 @@ app.post('/api/launch-request', (req, res) => {
     approved[deviceId].pendingCommands.push({ type: 'launch', numbers, timestamp: Date.now() });
     fs.writeFileSync(APPROVED_FILE, JSON.stringify(approved, null, 2));
     
-    console.log(`🚀 Launch command sent to: ${deviceId} for profiles: ${numbers}`);
+    console.log(`🚀 Launch command to: ${deviceId} for profiles: ${numbers.join(',')}`);
     res.json({ success: true, message: `Launching ${numbers.length} profiles!` });
 });
 
@@ -153,6 +160,7 @@ app.post('/api/get-commands', (req, res) => {
     approved[deviceId].pendingCommands = [];
     fs.writeFileSync(APPROVED_FILE, JSON.stringify(approved, null, 2));
     
+    console.log(`📡 Commands sent to: ${deviceId} (${pendingCommands.length} commands)`);
     res.json({ success: true, commands: pendingCommands });
 });
 
@@ -161,15 +169,16 @@ app.post('/api/get-commands', (req, res) => {
 // সব রিকোয়েস্ট দেখা
 app.get('/api/admin/requests', (req, res) => {
     const requests = JSON.parse(fs.readFileSync(REQUESTS_FILE));
+    console.log(`📋 Admin viewed requests: ${requests.length} total`);
     res.json(requests);
 });
 
 // অ্যাপ্রুভ করা
 app.post('/api/admin/approve', (req, res) => {
     const { deviceId, hours, userName } = req.body;
-    console.log(`📝 Approving: ${deviceId} for ${hours} hours`);
+    console.log(`📝 Approve request for: ${deviceId}, hours: ${hours}`);
     
-    // রিকোয়েস্ট আপডেট
+    // 1. রিকোয়েস্ট আপডেট
     const requests = JSON.parse(fs.readFileSync(REQUESTS_FILE));
     const requestIndex = requests.findIndex(r => r.deviceId === deviceId);
     
@@ -177,9 +186,12 @@ app.post('/api/admin/approve', (req, res) => {
         requests[requestIndex].status = 'approved';
         requests[requestIndex].approvedAt = new Date().toISOString();
         fs.writeFileSync(REQUESTS_FILE, JSON.stringify(requests, null, 2));
+        console.log(`   ✅ Request updated in requests.json`);
+    } else {
+        console.log(`   ⚠️ Request not found in requests.json`);
     }
     
-    // অ্যাপ্রুভড লিস্টে যোগ
+    // 2. অ্যাপ্রুভড লিস্টে যোগ
     const approved = JSON.parse(fs.readFileSync(APPROVED_FILE));
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + parseInt(hours));
@@ -194,18 +206,19 @@ app.post('/api/admin/approve', (req, res) => {
     };
     
     fs.writeFileSync(APPROVED_FILE, JSON.stringify(approved, null, 2));
+    console.log(`   ✅ Added to approved.json, expires: ${expiresAt.toISOString()}`);
     
-    // Socket.io নোটিফিকেশন
+    // 3. Socket.io নোটিফিকেশন
     io.emit('request-approved', { deviceId });
     
-    console.log(`✅ Approved: ${deviceId} until ${expiresAt.toLocaleString()}`);
+    console.log(`🎉 APPROVED: ${deviceId} for ${hours} hours`);
     res.json({ success: true });
 });
 
 // রিজেক্ট করা
 app.post('/api/admin/reject', (req, res) => {
     const { deviceId } = req.body;
-    console.log(`📝 Rejecting: ${deviceId}`);
+    console.log(`📝 Reject request for: ${deviceId}`);
     
     const requests = JSON.parse(fs.readFileSync(REQUESTS_FILE));
     const filteredRequests = requests.filter(r => r.deviceId !== deviceId);
@@ -213,8 +226,21 @@ app.post('/api/admin/reject', (req, res) => {
     
     io.emit('request-rejected', { deviceId });
     
-    console.log(`❌ Rejected: ${deviceId}`);
+    console.log(`❌ REJECTED: ${deviceId}`);
     res.json({ success: true });
+});
+
+// ডিবাগ এন্ডপয়েন্ট - সব ডাটা দেখা
+app.get('/api/admin/debug', (req, res) => {
+    const requests = JSON.parse(fs.readFileSync(REQUESTS_FILE));
+    const approved = JSON.parse(fs.readFileSync(APPROVED_FILE));
+    const devices = JSON.parse(fs.readFileSync(DEVICES_FILE));
+    
+    res.json({
+        requests: requests,
+        approved: approved,
+        devices: devices
+    });
 });
 
 // ==================== HTML রুটস ====================
@@ -237,5 +263,6 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`\n   📍 Port: ${PORT}`);
     console.log(`   🌐 URL: http://localhost:${PORT}`);
     console.log(`   👑 Admin: http://localhost:${PORT}/admin.html`);
+    console.log(`   🔍 Debug: http://localhost:${PORT}/api/admin/debug`);
     console.log(`\n   ✅ Ready to accept requests!\n`);
 });
