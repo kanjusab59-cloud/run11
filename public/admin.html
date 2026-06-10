@@ -87,6 +87,7 @@
             display: flex;
             gap: 10px;
             margin-top: 12px;
+            flex-wrap: wrap;
         }
         select {
             padding: 8px 12px;
@@ -97,7 +98,7 @@
             background: #4caf50;
             color: white;
             border: none;
-            padding: 8px 20px;
+            padding: 8px 24px;
             border-radius: 8px;
             cursor: pointer;
         }
@@ -105,7 +106,7 @@
             background: #f44336;
             color: white;
             border: none;
-            padding: 8px 20px;
+            padding: 8px 24px;
             border-radius: 8px;
             cursor: pointer;
         }
@@ -123,19 +124,6 @@
             font-size: 20px;
             cursor: pointer;
         }
-        .debug-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #ff9800;
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-        }
         .log {
             background: #1e1e1e;
             color: #0f0;
@@ -143,7 +131,7 @@
             font-size: 11px;
             padding: 10px;
             border-radius: 8px;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
         }
     </style>
@@ -179,9 +167,9 @@
         </div>
 
         <div class="section">
-            <h3>✅ Approved Users</h3>
+            <h3>✅ Approved Devices</h3>
             <div id="approvedList">
-                <div class="empty">No approved users</div>
+                <div class="empty">No approved devices</div>
             </div>
         </div>
 
@@ -192,7 +180,6 @@
     </div>
 
     <button class="refresh-btn" onclick="loadAll()">🔄</button>
-    <button class="debug-btn" onclick="showDebug()">🐛</button>
 
     <script>
         let socket = null;
@@ -201,13 +188,9 @@
             const logDiv = document.getElementById('log');
             const time = new Date().toLocaleTimeString();
             logDiv.innerHTML = `[${time}] ${message}<br>` + logDiv.innerHTML;
-            if (logDiv.children.length > 50) {
-                logDiv.innerHTML = logDiv.innerHTML.split('<br>').slice(0, 50).join('<br>');
-            }
         }
 
         async function loadAll() {
-            addLog('Loading data...');
             await loadRequests();
             await loadDebug();
         }
@@ -226,9 +209,9 @@
                 displayPending(pending);
                 displayApproved(approved);
                 
-                addLog(`Loaded: ${pending.length} pending, ${approved.length} approved`);
+                addLog(`📊 Loaded: ${pending.length} pending, ${approved.length} approved`);
             } catch(e) {
-                addLog(`Error loading requests: ${e.message}`);
+                addLog(`❌ Error: ${e.message}`);
             }
         }
 
@@ -252,7 +235,7 @@
             let html = '';
             for (const req of requests) {
                 html += `
-                    <div class="request-card" id="req_${req.deviceId}">
+                    <div class="request-card">
                         <div class="request-header">
                             <span>🆔 ${req.deviceId.substring(0, 40)}...</span>
                             <span>📅 ${new Date(req.timestamp).toLocaleString()}</span>
@@ -263,19 +246,21 @@
                         <div class="profile-tags">
                             ${req.profiles && req.profiles.length > 0 ? 
                                 req.profiles.map(p => `<span class="profile-tag">${p.name || p}</span>`).join('') : 
-                                '<span class="profile-tag">No profiles yet</span>'}
+                                '<span class="profile-tag">No profiles detected yet</span>'}
                         </div>
                         <div class="actions">
-                            <select id="hours_${req.deviceId}">
-                                <option value="1">1 hour</option>
-                                <option value="3">3 hours</option>
-                                <option value="6">6 hours</option>
-                                <option value="12">12 hours</option>
-                                <option value="24" selected>24 hours</option>
-                                <option value="48">48 hours</option>
-                                <option value="72">72 hours</option>
+                            <select id="days_${req.deviceId}">
+                                <option value="1">1 day</option>
+                                <option value="3">3 days</option>
+                                <option value="7">7 days</option>
+                                <option value="15">15 days</option>
+                                <option value="30">30 days</option>
+                                <option value="60">60 days</option>
+                                <option value="90">90 days</option>
+                                <option value="180">180 days</option>
+                                <option value="365" selected>365 days (1 year)</option>
                             </select>
-                            <button class="btn-approve" onclick="approveRequest('${req.deviceId}', '${req.userName}')">✅ Approve</button>
+                            <button class="btn-approve" onclick="approveRequest('${req.deviceId}', '${req.userName}')">✅ Approve Device</button>
                             <button class="btn-reject" onclick="rejectRequest('${req.deviceId}')">❌ Reject</button>
                         </div>
                     </div>
@@ -288,7 +273,7 @@
             const container = document.getElementById('approvedList');
             
             if (requests.length === 0) {
-                container.innerHTML = '<div class="empty">No approved users yet</div>';
+                container.innerHTML = '<div class="empty">No approved devices yet</div>';
                 return;
             }
             
@@ -296,14 +281,17 @@
             for (const req of requests) {
                 const expiresAt = new Date(req.expiresAt || req.approvedAt);
                 const isExpired = expiresAt < new Date();
+                const daysLeft = Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24));
                 html += `
-                    <div class="request-card ${isExpired ? 'expired' : 'approved'}" style="${isExpired ? 'background:#ffebee;' : ''}">
+                    <div class="request-card approved" style="${isExpired ? 'background:#ffebee;' : ''}">
                         <div class="request-header">
                             <span>🆔 ${req.deviceId.substring(0, 40)}...</span>
                             <span>👤 ${req.userName || 'Anonymous'}</span>
                         </div>
                         <div class="request-device">
-                            ⏱️ Expires: ${expiresAt.toLocaleString()} ${isExpired ? '(EXPIRED)' : ''}
+                            📅 Approved: ${new Date(req.approvedAt).toLocaleDateString()}<br>
+                            ⏱️ Expires: ${expiresAt.toLocaleDateString()} 
+                            ${isExpired ? '(EXPIRED)' : `(${daysLeft} days left)`}
                         </div>
                     </div>
                 `;
@@ -312,23 +300,25 @@
         }
 
         async function approveRequest(deviceId, userName) {
-            const hoursSelect = document.getElementById(`hours_${deviceId}`);
-            const hours = hoursSelect ? hoursSelect.value : '24';
+            const daysSelect = document.getElementById(`days_${deviceId}`);
+            const days = daysSelect ? daysSelect.value : '365';
             
-            addLog(`Approving: ${deviceId} for ${hours} hours...`);
+            if (!confirm(`Approve device ${deviceId} for ${days} days?`)) return;
+            
+            addLog(`📝 Approving: ${deviceId} for ${days} days...`);
             
             try {
                 const response = await fetch('/api/admin/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId, hours, userName })
+                    body: JSON.stringify({ deviceId, days, userName })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    addLog(`✅ APPROVED: ${deviceId} for ${hours} hours`);
-                    alert(`✅ Approved successfully!`);
+                    addLog(`✅ APPROVED: ${deviceId} for ${days} days`);
+                    alert(`✅ Device approved for ${days} days!`);
                     loadAll();
                 } else {
                     addLog(`❌ Approval failed: ${data.message}`);
@@ -341,7 +331,9 @@
         }
 
         async function rejectRequest(deviceId) {
-            addLog(`Rejecting: ${deviceId}...`);
+            if (!confirm(`Reject this request?`)) return;
+            
+            addLog(`📝 Rejecting: ${deviceId}...`);
             
             try {
                 const response = await fetch('/api/admin/reject', {
@@ -364,17 +356,6 @@
             }
         }
 
-        async function showDebug() {
-            try {
-                const response = await fetch('/api/admin/debug');
-                const data = await response.json();
-                console.log('Debug data:', data);
-                alert(`Debug:\nPending: ${data.requests.filter(r => r.status === 'pending').length}\nApproved: ${Object.keys(data.approved).length}\nDevices: ${Object.keys(data.devices).length}\n\nCheck console for full data`);
-            } catch(e) {
-                alert('Debug error: ' + e.message);
-            }
-        }
-
         function setupSocket() {
             socket = io();
             socket.on('new-request', (data) => {
@@ -383,10 +364,6 @@
             });
             socket.on('request-approved', (data) => {
                 addLog(`✅ Request approved for: ${data.deviceId}`);
-                loadAll();
-            });
-            socket.on('request-rejected', (data) => {
-                addLog(`❌ Request rejected for: ${data.deviceId}`);
                 loadAll();
             });
         }
