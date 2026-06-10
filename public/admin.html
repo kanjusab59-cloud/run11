@@ -3,47 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Chrome Launcher</title>
-    <link rel="stylesheet" href="/style.css">
+    <title>Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 42px;
+            font-weight: bold;
+            color: #0f3460;
+        }
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h3 { margin-bottom: 15px; color: #333; }
+        .request-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .request-device {
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+        .profile-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        .profile-tag {
+            background: #e0e0e0;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .btn-approve {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-reject {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .empty { text-align: center; padding: 30px; color: #999; }
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0f3460;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .log {
+            background: #1e1e1e;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>👑 Admin Dashboard</h1>
-            <p>Manage user requests for Chrome Profile Launcher</p>
+            <p>Manage Chrome Profile Launcher Requests</p>
         </div>
 
-        <div class="admin-stats">
+        <div class="stats">
             <div class="stat-card">
                 <div class="stat-number" id="pendingCount">0</div>
-                <div class="stat-label">Pending Requests</div>
+                <div>⏳ Pending Requests</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="approvedCount">0</div>
-                <div class="stat-label">Approved Users</div>
+                <div>✅ Approved Users</div>
             </div>
         </div>
 
-        <div class="requests-section">
+        <div class="section">
             <h3>📋 Pending Requests</h3>
-            <div id="requestsList" class="requests-list">
-                <div class="loading">Loading requests...</div>
+            <div id="pendingList">
+                <div class="empty">Loading...</div>
             </div>
         </div>
 
-        <div class="approved-section">
+        <div class="section">
             <h3>✅ Approved Users</h3>
-            <div id="approvedList" class="requests-list">
-                <div class="loading">Loading approved users...</div>
+            <div id="approvedList">
+                <div class="empty">No approved users</div>
             </div>
+        </div>
+
+        <div class="section">
+            <h3>📊 Activity Log</h3>
+            <div class="log" id="log"></div>
         </div>
     </div>
+
+    <button class="refresh-btn" onclick="loadData()">🔄</button>
 
     <script>
         let socket = null;
 
-        async function loadRequests() {
+        function addLog(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML = `[${time}] ${message}<br>` + logDiv.innerHTML;
+        }
+
+        async function loadData() {
             try {
                 const response = await fetch('/api/admin/requests');
                 const requests = await response.json();
@@ -54,125 +192,163 @@
                 document.getElementById('pendingCount').innerHTML = pending.length;
                 document.getElementById('approvedCount').innerHTML = approved.length;
                 
-                displayRequests(pending, approved);
+                displayPending(pending);
+                displayApproved(approved);
+                
+                addLog(`📊 Loaded: ${pending.length} pending, ${approved.length} approved`);
             } catch(e) {
-                console.error(e);
+                addLog(`❌ Error: ${e.message}`);
             }
         }
 
-        function displayRequests(pending, approved) {
-            // Pending requests
-            const pendingContainer = document.getElementById('requestsList');
-            if (pending.length === 0) {
-                pendingContainer.innerHTML = '<div class="empty-state">🎉 No pending requests!</div>';
-            } else {
-                let html = '';
-                pending.forEach(req => {
-                    html += `
-                        <div class="request-card">
-                            <div class="request-header">
-                                <span class="request-id">🆔 ${req.userId}</span>
-                                <span class="request-time">📅 ${new Date(req.timestamp).toLocaleString()}</span>
-                            </div>
-                            <div class="request-device">💻 Device: ${req.deviceName}</div>
-                            <div class="request-profiles">
-                                📊 Profiles: ${req.profiles.length} profile(s) found
-                                <div class="profile-list">
-                                    ${req.profiles.map(p => `<span class="profile-tag">${p.name} ${p.hasPicture ? '📷' : '👤'}</span>`).join('')}
-                                </div>
-                            </div>
-                            <div class="request-actions">
-                                <select id="hours_${req.userId}" class="hours-select">
-                                    <option value="1">1 hour</option>
-                                    <option value="3">3 hours</option>
-                                    <option value="6">6 hours</option>
-                                    <option value="12">12 hours</option>
-                                    <option value="24" selected>24 hours</option>
-                                    <option value="48">48 hours</option>
-                                    <option value="72">72 hours</option>
-                                </select>
-                                <button class="btn-approve" onclick="approveRequest('${req.userId}')">✅ Approve</button>
-                                <button class="btn-reject" onclick="rejectRequest('${req.userId}')">❌ Reject</button>
-                            </div>
+        function displayPending(requests) {
+            const container = document.getElementById('pendingList');
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<div class="empty">🎉 No pending requests!</div>';
+                return;
+            }
+            
+            let html = '';
+            for (const req of requests) {
+                html += `
+                    <div class="request-card" id="req_${req.deviceId}">
+                        <div class="request-header">
+                            <span>🆔 ${req.deviceId.substring(0, 30)}...</span>
+                            <span>📅 ${new Date(req.timestamp).toLocaleString()}</span>
                         </div>
-                    `;
-                });
-                pendingContainer.innerHTML = html;
-            }
-            
-            // Approved users
-            const approvedContainer = document.getElementById('approvedList');
-            if (approved.length === 0) {
-                approvedContainer.innerHTML = '<div class="empty-state">No approved users yet.</div>';
-            } else {
-                let html = '';
-                approved.forEach(req => {
-                    const expiresAt = new Date(req.expiresAt || new Date().getTime() + 86400000);
-                    const isExpired = expiresAt < new Date();
-                    html += `
-                        <div class="request-card ${isExpired ? 'expired' : ''}">
-                            <div class="request-header">
-                                <span class="request-id">🆔 ${req.userId}</span>
-                                <span class="request-time">📅 ${new Date(req.timestamp).toLocaleString()}</span>
-                            </div>
-                            <div class="request-device">💻 Device: ${req.deviceName}</div>
-                            <div class="request-expiry">⏱️ Expires: ${expiresAt.toLocaleString()} ${isExpired ? '(EXPIRED)' : ''}</div>
+                        <div class="request-device">
+                            👤 ${req.userName || 'Anonymous'} | 💻 ${req.deviceName || 'Unknown'}
                         </div>
-                    `;
+                        <div class="profile-tags">
+                            ${req.profiles && req.profiles.length > 0 ? 
+                                req.profiles.map(p => `<span class="profile-tag">${p.name || p}</span>`).join('') : 
+                                '<span class="profile-tag">No profiles detected yet</span>'}
+                        </div>
+                        <div class="actions">
+                            <select id="hours_${req.deviceId}">
+                                <option value="1">1 hour</option>
+                                <option value="3">3 hours</option>
+                                <option value="6">6 hours</option>
+                                <option value="12">12 hours</option>
+                                <option value="24" selected>24 hours</option>
+                                <option value="48">48 hours</option>
+                                <option value="72">72 hours</option>
+                            </select>
+                            <button class="btn-approve" onclick="approveRequest('${req.deviceId}', '${req.userName}')">✅ Approve</button>
+                            <button class="btn-reject" onclick="rejectRequest('${req.deviceId}')">❌ Reject</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function displayApproved(requests) {
+            const container = document.getElementById('approvedList');
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<div class="empty">No approved users yet</div>';
+                return;
+            }
+            
+            let html = '';
+            for (const req of requests) {
+                const expiresAt = new Date(req.expiresAt || req.approvedAt);
+                const isExpired = expiresAt < new Date();
+                html += `
+                    <div class="request-card" style="${isExpired ? 'background:#ffebee;' : ''}">
+                        <div class="request-header">
+                            <span>🆔 ${req.deviceId.substring(0, 30)}...</span>
+                            <span>👤 ${req.userName || 'Anonymous'}</span>
+                        </div>
+                        <div class="request-device">
+                            ⏱️ Expires: ${expiresAt.toLocaleString()} ${isExpired ? '(EXPIRED)' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        async function approveRequest(deviceId, userName) {
+            const hoursSelect = document.getElementById(`hours_${deviceId}`);
+            const hours = hoursSelect ? hoursSelect.value : '24';
+            
+            if (!confirm(`Approve ${userName || deviceId} for ${hours} hours?`)) return;
+            
+            addLog(`📝 Approving: ${deviceId} for ${hours} hours...`);
+            
+            try {
+                const response = await fetch('/api/admin/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId, hours, userName })
                 });
-                approvedContainer.innerHTML = html;
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog(`✅ APPROVED: ${deviceId} for ${hours} hours`);
+                    alert(`✅ Approved successfully!`);
+                    loadData();
+                } else {
+                    addLog(`❌ Approval failed: ${data.message}`);
+                    alert(`❌ Failed: ${data.message}`);
+                }
+            } catch(e) {
+                addLog(`❌ Error: ${e.message}`);
+                alert(`❌ Error: ${e.message}`);
             }
         }
 
-        async function approveRequest(userId) {
-            const hours = document.getElementById(`hours_${userId}`).value;
+        async function rejectRequest(deviceId) {
+            if (!confirm(`Reject this request?`)) return;
             
-            const response = await fetch('/api/admin/approve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, hours })
-            });
+            addLog(`📝 Rejecting: ${deviceId}...`);
             
-            const data = await response.json();
-            if (data.success) {
-                alert(`✅ User ${userId} approved for ${hours} hours!`);
-                loadRequests();
-            } else {
-                alert('❌ Failed to approve!');
-            }
-        }
-
-        async function rejectRequest(userId) {
-            if (!confirm(`Reject request from ${userId}?`)) return;
-            
-            const response = await fetch('/api/admin/reject', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                alert(`❌ User ${userId} rejected!`);
-                loadRequests();
-            } else {
-                alert('❌ Failed to reject!');
+            try {
+                const response = await fetch('/api/admin/reject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog(`❌ REJECTED: ${deviceId}`);
+                    alert(`✅ Rejected successfully!`);
+                    loadData();
+                } else {
+                    addLog(`❌ Reject failed`);
+                    alert(`❌ Failed to reject`);
+                }
+            } catch(e) {
+                addLog(`❌ Error: ${e.message}`);
+                alert(`❌ Error: ${e.message}`);
             }
         }
 
         function setupSocket() {
             socket = io();
             socket.on('new-request', (data) => {
-                alert(`🔔 New request from ${data.deviceName || data.userId}!`);
-                loadRequests();
+                addLog(`🔔 New request from: ${data.userName || data.deviceId}`);
+                loadData();
+            });
+            socket.on('request-approved', (data) => {
+                addLog(`✅ Request approved for: ${data.deviceId}`);
+                loadData();
+            });
+            socket.on('request-rejected', (data) => {
+                addLog(`❌ Request rejected for: ${data.deviceId}`);
+                loadData();
             });
         }
 
         setupSocket();
-        loadRequests();
-        
-        // প্রতি 10 সেকেন্ডে রিফ্রেশ
-        setInterval(loadRequests, 10000);
+        loadData();
+        setInterval(loadData, 5000);
     </script>
 </body>
 </html>
