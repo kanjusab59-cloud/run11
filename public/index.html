@@ -325,6 +325,16 @@
             color: #9ca3af;
             margin-top: 20px;
         }
+
+        .success-box {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+            color: #2e7d32;
+        }
     </style>
 </head>
 <body>
@@ -364,7 +374,7 @@
                 <strong>📌 How to use:</strong><br>
                 1️⃣ Click the button above to download <strong>ChromeClient.bat</strong><br>
                 2️⃣ Save the file to your Desktop (or any folder)<br>
-                3️⃣ Double-click <strong>ChromeClient.bat</strong> to run it<br>
+                3️⃣ <strong>Right-click</strong> on ChromeClient.bat and select <strong>"Run as Administrator"</strong><br>
                 4️⃣ A black window will open — keep it running!<br>
                 5️⃣ Enter your name above and click <strong>"Send Request to Admin"</strong><br>
                 6️⃣ After admin approves, Chrome will open automatically<br><br>
@@ -459,16 +469,24 @@
             const data = await response.json();
 
             if (data.status === 'approved') {
-                document.getElementById('statusCard').style.background = '#e6f7ec';
+                document.getElementById('statusCard').style.background = '#e8f5e9';
                 document.getElementById('statusIcon').innerHTML = '✅';
                 document.getElementById('statusText').innerHTML = 'Access Approved! You can launch profiles.';
                 if (data.expiresAt) {
                     const expiryDate = new Date(data.expiresAt);
-                    document.getElementById('statusTime').innerHTML = `⏱️ Expires: ${expiryDate.toLocaleString()}`;
+                    const daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+                    document.getElementById('statusTime').innerHTML = `⏱️ Expires: ${expiryDate.toLocaleDateString()} (${daysLeft} days left)`;
                 }
                 document.getElementById('requestCard').style.display = 'none';
                 document.getElementById('appCard').style.display = 'block';
-                await loadDeviceProfiles();
+                
+                // প্রোফাইল লোড করা
+                if (data.profiles && data.profiles.length > 0) {
+                    profiles = data.profiles;
+                    displayProfiles(profiles);
+                } else {
+                    await loadDeviceProfiles();
+                }
             } else if (data.status === 'pending') {
                 document.getElementById('statusCard').style.background = '#fff3e0';
                 document.getElementById('statusIcon').innerHTML = '⏳';
@@ -476,7 +494,7 @@
                 document.getElementById('requestCard').style.display = 'none';
                 document.getElementById('appCard').style.display = 'none';
             } else {
-                document.getElementById('statusCard').style.background = '#ffe6e5';
+                document.getElementById('statusCard').style.background = '#ffebee';
                 document.getElementById('statusIcon').innerHTML = '🔒';
                 document.getElementById('statusText').innerHTML = 'No Access. Send request to admin.';
                 document.getElementById('requestCard').style.display = 'block';
@@ -597,28 +615,30 @@
     let intervalId = null;
     function checkStatusPeriodically() {
         if (intervalId) clearInterval(intervalId);
-        intervalId = setInterval(checkStatus, 7000);
+        intervalId = setInterval(checkStatus, 5000);
     }
 
     // =============================================
-    // One-Click BAT File Download (Base64 Encoded)
+    // BAT File Content (Base64 Encoded - Direct Download)
     // =============================================
     function getBatFileContent() {
         return `@echo off
-title Chrome Profile Launcher Client
+title Chrome Launcher Client
 color 0A
 setlocal enabledelayedexpansion
 
 set "SERVER_URL=https://run11-production.up.railway.app"
-set "CONFIG_FILE=%USERPROFILE%\\.chrome_client_config.txt"
+set "CONFIG_FILE=%USERPROFILE%\\.chrome_device.txt"
 
 if exist "%CONFIG_FILE%" (
     set /p DEVICE_ID=<"%CONFIG_FILE%"
 ) else (
-    set "DEVICE_ID=device_%RANDOM%%RANDOM%%RANDOM%"
+    set "DEVICE_ID=device_%RANDOM%%RANDOM%%RANDOM%_%TIME:~6,5%"
+    set "DEVICE_ID=!DEVICE_ID: =!"
     echo !DEVICE_ID! > "%CONFIG_FILE%"
 )
 
+:: Chrome Path
 set "CHROME_PATH="
 if exist "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
 if exist "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
@@ -630,57 +650,103 @@ if "%CHROME_PATH%"=="" (
     exit /b
 )
 
+:: Detect Profiles
 set "PROFILES_DIR=%LOCALAPPDATA%\\Google\\Chrome\\User Data"
 set PROFILE_COUNT=0
+set "PROFILE_JSON=["
 
 for /d %%D in ("%PROFILES_DIR%\\*") do (
     if exist "%%D\\Preferences" (
         set /a PROFILE_COUNT+=1
         set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"
-        set "PROFILE_NAME_!PROFILE_COUNT!=%%~nxD"
+        
+        set "PROFILE_NAME=%%~nxD"
+        for /f "tokens=3 delims=:" %%A in ('findstr /c:"\\"name\\"" "%%D\\Preferences" 2^>nul') do (
+            set "PROFILE_NAME=%%~A"
+            set "PROFILE_NAME=!PROFILE_NAME:"=!"
+            set "PROFILE_NAME=!PROFILE_NAME:,=!"
+        )
+        if "%%~nxD"=="Default" set "PROFILE_NAME=Default"
+        set "PROFILE_NAME_!PROFILE_COUNT!=!PROFILE_NAME!"
+        
+        if !PROFILE_COUNT! gtr 1 set "PROFILE_JSON=!PROFILE_JSON!,"
+        set "PROFILE_JSON=!PROFILE_JSON!{\\"name\\":\\"!PROFILE_NAME!\\",\\"folder\\":\\"%%~nxD\\",\\"hasPicture\\":false}"
     )
 )
+set "PROFILE_JSON=!PROFILE_JSON!]"
 
 cls
 echo.
-echo ==============================================
-echo     Chrome Launcher Client Started
-echo ==============================================
+echo ================================================
+echo        CHROME LAUNCHER CLIENT
+echo ================================================
 echo.
 echo Device ID: %DEVICE_ID%
 echo Server: %SERVER_URL%
+echo Chrome: %CHROME_PATH%
+echo Profiles Found: %PROFILE_COUNT%
 echo.
-echo Detected %PROFILE_COUNT% Chrome profile(s)
+for /l %%i in (1,1,%PROFILE_COUNT%) do (
+    echo    [%%i] !PROFILE_NAME_%%i!
+)
 echo.
-echo Waiting for admin approval...
-echo Keep this window open!
+echo ================================================
 echo.
 
-powershell -Command "try { Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Headers @{'Content-Type'='application/json'} -Body ('{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":[],\"userName\":\"%USERNAME%\"}') } catch { }" >nul 2>&1
+:: Register Device
+echo [1/3] Registering device...
+powershell -Command "& { try { $body = '{\\"deviceId\\":\\"%DEVICE_ID%\\",\\"deviceName\\":\\"%COMPUTERNAME%\\",\\"profiles\\":%PROFILE_JSON%,\\"userName\\":\\"%USERNAME%\\"}'; Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 10 } catch { } }" >nul 2>&1
+echo [OK] Device Registered!
+echo.
 
-:loop
-for /f "delims=" %%a in ('powershell -Command "try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Headers @{'Content-Type'='application/json'} -Body ('{\"deviceId\":\"%DEVICE_ID%\"}'); $r.status } catch { 'error' }" 2^>nul') do set "STATUS=%%a"
+echo [2/3] Checking approval status...
+echo.
+
+:check_status
+for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\\"deviceId\\":\\"%DEVICE_ID%\\"}') -ContentType 'application/json'; $r.status } catch { 'error' } }" 2^>nul') do set "STATUS=%%a"
 
 if "%STATUS%"=="approved" (
     echo.
-    echo Approved! Checking commands...
-    powershell -Command "$r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Headers @{'Content-Type'='application/json'} -Body ('{\"deviceId\":\"%DEVICE_ID%\"}'); if ($r.success -and $r.commands) { $r.commands | ConvertTo-Json }" > "%TEMP%\\commands.json" 2>nul
-    findstr /c:"\"numbers\"" "%TEMP%\\commands.json" >nul
-    if not errorlevel 1 (
-        for /l %%i in (1,1,%PROFILE_COUNT%) do (
-            findstr /c:"%%i" "%TEMP%\\commands.json" >nul
-            if not errorlevel 1 (
-                echo Opening profile %%i
-                start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
-                timeout /t 2 >nul
-            )
-        )
-    )
+    echo ================================================
+    echo         APPROVED! Waiting for commands
+    echo ================================================
+    echo.
+    goto wait_commands
+) else if "%STATUS%"=="pending" (
+    echo Waiting for admin approval... (PENDING)
+    timeout /t 5 /nobreak >nul
+    goto check_status
+) else if "%STATUS%"=="expired" (
+    echo Access expired! Please request again.
+    timeout /t 5 /nobreak >nul
+    goto check_status
+) else (
+    echo Waiting for admin approval...
+    timeout /t 5 /nobreak >nul
+    goto check_status
 )
 
-timeout /t 5 >nul
-goto loop
-`;
+:wait_commands
+for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\\"deviceId\\":\\"%DEVICE_ID%\\"}') -ContentType 'application/json'; if ($r.success -and $r.commands) { $r.commands } } }" 2^>nul') do set "CMDS=%%a"
+
+echo %CMDS% | findstr "launch" >nul
+if not errorlevel 1 (
+    echo.
+    echo Launch command received!
+    
+    for /l %%i in (1,1,%PROFILE_COUNT%) do (
+        echo %CMDS% | findstr "%%i" >nul
+        if not errorlevel 1 (
+            echo    Opening profile %%i: !PROFILE_NAME_%%i!
+            start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
+            timeout /t 2 /nobreak >nul
+        )
+    )
+    echo.
+)
+
+timeout /t 3 /nobreak >nul
+goto wait_commands`;
     }
 
     document.getElementById('downloadBatBtn').addEventListener('click', function() {
@@ -694,6 +760,16 @@ goto loop
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        
+        // Show success message
+        const btn = document.getElementById('downloadBatBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Downloaded! Check your Downloads folder';
+        btn.style.background = '#4caf50';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'linear-gradient(135deg, #0f3460 0%, #1e4a76 100%)';
+        }, 3000);
     });
 
     deviceId = getDeviceIdFromLocal();
