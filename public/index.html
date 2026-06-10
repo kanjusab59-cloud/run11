@@ -3,67 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome Launcher | User</title>
+    <title>Chrome Launcher | User Panel</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #0b1120 0%, #19233c 100%);
             min-height: 100vh;
             padding: 2rem 1rem;
         }
-
         .container {
-            max-width: 1000px;
+            max-width: 950px;
             margin: 0 auto;
         }
-
-        /* cards */
         .card {
             background: rgba(255, 255, 255, 0.97);
             border-radius: 2rem;
             padding: 1.8rem;
             margin-bottom: 1.8rem;
             box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(2px);
-            transition: all 0.2s;
         }
-
         .header {
             background: linear-gradient(105deg, #0a2b3e 0%, #1a3f5c 100%);
             color: white;
             text-align: center;
         }
-
         .status-badge {
             display: flex;
             align-items: center;
             gap: 1.2rem;
             flex-wrap: wrap;
         }
-
         .status-icon {
-            font-size: 3.2rem;
+            font-size: 3rem;
         }
-
         .status-text {
             font-weight: 600;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
-
         .status-time {
-            font-size: 0.8rem;
-            color: #2c3e66;
+            font-size: 0.75rem;
             background: #eef2ff;
             padding: 0.2rem 0.8rem;
             border-radius: 30px;
         }
-
         .device-id-box {
             background: #f1f5f9;
             border-radius: 1.2rem;
@@ -73,52 +60,43 @@
             margin: 1rem 0;
             word-break: break-all;
         }
-
         .btn {
             border: none;
             border-radius: 3rem;
-            padding: 0.8rem 1.8rem;
+            padding: 0.8rem 1.5rem;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: 0.2s;
             width: 100%;
         }
-
         .btn-primary {
             background: #0f2b3d;
             color: white;
-            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
         }
-
         .btn-primary:hover {
             background: #1d4a6e;
             transform: translateY(-2px);
         }
-
         .btn-download {
             background: linear-gradient(95deg, #1f5e3a, #0f3b24);
             color: white;
             margin: 0.5rem 0;
         }
-
         .btn-download-alt {
             background: linear-gradient(95deg, #9b4b1a, #6b2e00);
         }
-
         .flex-btns {
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
             margin: 1rem 0;
         }
-
         .profile-grid {
             max-height: 420px;
             overflow-y: auto;
             margin-top: 1.5rem;
         }
-
         .profile-item {
             background: #fefefe;
             border: 1px solid #e2edf2;
@@ -128,10 +106,8 @@
             display: flex;
             align-items: center;
             gap: 1rem;
-            transition: 0.1s;
             cursor: pointer;
         }
-
         .profile-number {
             background: #0f2b3d;
             color: white;
@@ -143,14 +119,12 @@
             justify-content: center;
             font-weight: bold;
         }
-
         .search-row {
             display: flex;
             gap: 0.8rem;
             margin-bottom: 1rem;
             flex-wrap: wrap;
         }
-
         .search-row input {
             flex: 2;
             padding: 0.8rem 1rem;
@@ -158,7 +132,6 @@
             border: 1px solid #cbd5e1;
             font-size: 0.9rem;
         }
-
         .example-tag {
             background: #eef2ff;
             padding: 0.2rem 1rem;
@@ -168,7 +141,6 @@
             font-size: 0.75rem;
             cursor: pointer;
         }
-
         footer {
             text-align: center;
             font-size: 0.7rem;
@@ -179,6 +151,19 @@
             margin: 1rem 0;
             border-color: #e2e8f0;
         }
+        .code-box {
+            background: #1e1e2e;
+            color: #f8fafc;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow: auto;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -188,7 +173,6 @@
         <p>Request access → Admin approves → Launch profiles</p>
     </div>
 
-    <!-- STATUS CARD -->
     <div class="card" id="statusCard">
         <div class="status-badge">
             <span class="status-icon" id="statusIcon">🔒</span>
@@ -197,34 +181,33 @@
         </div>
     </div>
 
-    <!-- REQUEST SECTION (visible when no access) -->
+    <!-- Request Section -->
     <div class="card" id="requestSection" style="display: none;">
         <h3>📋 Request device access</h3>
-        <p>You need admin approval to control Chrome profiles.</p>
+        <p>You need admin approval to use Chrome profiles.</p>
         <div style="margin: 1rem 0">
             <label>👤 Your name (so admin can identify you):</label>
             <input type="text" id="userName" placeholder="e.g. Karim / IT dept" style="width:100%; margin-top: 0.4rem; padding: 0.6rem; border-radius: 2rem; border:1px solid #ccc;">
         </div>
         <div class="device-id-box" id="deviceIdDisplay"></div>
 
-        <!-- DOWNLOAD BUTTONS (DIRECT BAT GENERATION) -->
         <div class="flex-btns">
-            <button id="downloadMainBat" class="btn btn-download">⬇️ 1. Download ChromeClient.bat (stable)</button>
-            <button id="downloadAdminBat" class="btn btn-download btn-download-alt">⬇️ 2. Download Run-As-Admin.bat (if CMD closes)</button>
+            <button id="downloadMainBat" class="btn btn-download">⬇️ 1. Download ChromeClient.bat</button>
+            <button id="downloadAdminBat" class="btn btn-download btn-download-alt">⬇️ 2. Download Run-As-Admin.bat (backup)</button>
         </div>
 
-        <div style="background: #f8fafc; padding: 0.8rem; border-radius: 1.2rem; margin: 1rem 0;">
-            <strong>📌 How to keep CMD open:</strong><br>
+        <div style="background: #f8fafc; padding: 0.8rem; border-radius: 1.2rem; margin: 1rem 0; font-size: 0.85rem;">
+            <strong>📌 How to use:</strong><br>
             • Save the downloaded .bat file on Desktop.<br>
             • <strong>Right-click</strong> → <strong>"Run as Administrator"</strong><br>
-            • The window will stay open and show "Waiting for approval".<br>
-            • After that, click below "Send Request".
+            • Keep the black window open!<br>
+            • Then click "Send Request to Admin".
         </div>
 
         <button id="sendReqBtn" class="btn btn-primary">📨 Send request to admin</button>
     </div>
 
-    <!-- LAUNCHER SECTION (after approval) -->
+    <!-- Launcher Section -->
     <div class="card" id="launcherSection" style="display: none;">
         <div class="search-row">
             <input type="text" id="profileNumbers" placeholder="e.g., 1,2,3  or  1 2 3  or  ALL">
@@ -239,48 +222,26 @@
             <div style="text-align:center; padding:2rem;">⚙️ Loading profiles...</div>
         </div>
     </div>
-    <footer>✅ Admin approves full device (up to 365 days) | Client detects local Chrome profiles</footer>
+    <footer>✅ Admin approves full device (up to 365 days)</footer>
 </div>
 
 <script>
-    // ---------- CONFIG ----------
-    const API_BASE = window.location.origin;  
+    const API_BASE = window.location.origin;
     let deviceId = null;
     let currentProfiles = [];
     let statusInterval = null;
 
-    // ---------- DEVICE ID ----------
+    // Device ID
     function getDeviceId() {
         let id = localStorage.getItem('chrome_launcher_device_id');
         if (!id) {
-            id = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2,10);
+            id = 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
             localStorage.setItem('chrome_launcher_device_id', id);
         }
         return id;
     }
 
-    // ---------- UI helpers ----------
-    function escapeHtml(str) {
-        if(!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    function showRequestPanel() {
-        document.getElementById('requestSection').style.display = 'block';
-        document.getElementById('launcherSection').style.display = 'none';
-    }
-
-    function showLauncherPanel() {
-        document.getElementById('requestSection').style.display = 'none';
-        document.getElementById('launcherSection').style.display = 'block';
-    }
-
-    // ---------- STATUS CHECK ----------
+    // Status check
     async function checkAccessStatus() {
         try {
             const res = await fetch(`${API_BASE}/api/check-status`, {
@@ -290,39 +251,39 @@
             });
             const data = await res.json();
             const statusCard = document.getElementById('statusCard');
-            const statusIcon = document.getElementById('statusIcon');
-            const statusText = document.getElementById('statusText');
-            const statusTimeSpan = document.getElementById('statusTime');
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            const timeSpan = document.getElementById('statusTime');
 
             if (data.status === 'approved') {
                 statusCard.style.background = '#e6f7ec';
-                statusIcon.innerText = '✅';
-                statusText.innerText = '✅ Access granted! You can launch profiles.';
+                icon.innerText = '✅';
+                text.innerText = '✅ Access granted! You can launch profiles.';
                 if (data.expiresAt) {
                     const expDate = new Date(data.expiresAt);
-                    const daysLeft = Math.ceil((expDate - new Date()) / (1000*3600*24));
-                    statusTimeSpan.innerText = `⏱️ Expires: ${expDate.toLocaleDateString()} (${daysLeft} days left)`;
+                    const daysLeft = Math.ceil((expDate - new Date()) / (86400000));
+                    timeSpan.innerText = `Expires: ${expDate.toLocaleDateString()} (${daysLeft} days left)`;
                 }
-                // load profiles from server
+                document.getElementById('requestSection').style.display = 'none';
+                document.getElementById('launcherSection').style.display = 'block';
                 await loadProfilesFromServer();
-                showLauncherPanel();
             } 
             else if (data.status === 'pending') {
                 statusCard.style.background = '#fff1e0';
-                statusIcon.innerText = '⏳';
-                statusText.innerText = '⏳ Request pending – waiting for admin approval.';
-                statusTimeSpan.innerText = '';
-                showRequestPanel();
+                icon.innerText = '⏳';
+                text.innerText = '⏳ Request pending – waiting for admin approval.';
+                document.getElementById('requestSection').style.display = 'none';
+                document.getElementById('launcherSection').style.display = 'none';
             }
             else {
                 statusCard.style.background = '#ffeae9';
-                statusIcon.innerText = '🔒';
-                statusText.innerText = '🔒 No access. Download client → send request → admin approves.';
-                statusTimeSpan.innerText = '';
-                showRequestPanel();
+                icon.innerText = '🔒';
+                text.innerText = '🔒 No access. Download client → send request → admin approves.';
+                document.getElementById('requestSection').style.display = 'block';
+                document.getElementById('launcherSection').style.display = 'none';
             }
-        } catch(err) {
-            console.warn("status check error", err);
+        } catch(e) {
+            console.warn(e);
         }
     }
 
@@ -334,21 +295,21 @@
                 body: JSON.stringify({ deviceId })
             });
             const data = await res.json();
-            if(data.success && data.profiles && data.profiles.length) {
+            if (data.success && data.profiles?.length) {
                 currentProfiles = data.profiles;
                 renderProfiles(currentProfiles);
             } else {
-                document.getElementById('profilesContainer').innerHTML = `<div style="padding:2rem; text-align:center;">📭 No profiles yet.<br>Run the ChromeClient.bat as admin first.</div>`;
+                document.getElementById('profilesContainer').innerHTML = `<div style="padding:2rem; text-align:center;">📭 No profiles yet.<br>Run ChromeClient.bat as admin first.</div>`;
             }
         } catch(e) {
-            document.getElementById('profilesContainer').innerHTML = `<div style="color:red;">⚠️ Error loading profiles</div>`;
+            document.getElementById('profilesContainer').innerHTML = `<div style="color:red;">Error loading profiles</div>`;
         }
     }
 
     function renderProfiles(profiles) {
         const container = document.getElementById('profilesContainer');
-        if(!profiles.length) {
-            container.innerHTML = '<div style="padding:2rem;">📭 No Chrome profiles found on this PC.</div>';
+        if (!profiles.length) {
+            container.innerHTML = '<div style="padding:2rem;">No Chrome profiles found.</div>';
             return;
         }
         let html = '';
@@ -364,22 +325,21 @@
         container.innerHTML = html;
     }
 
-    // ---------- LAUNCH REQUESTS ----------
     async function launchSingle(num) {
         await launchNumbers([num]);
     }
 
     async function launchProfilesFromInput() {
         let input = document.getElementById('profileNumbers').value.trim();
-        if(!input) { alert("Enter numbers e.g., 1,2,3"); return; }
+        if (!input) { alert("Enter numbers e.g., 1,2,3"); return; }
         input = input.replace(/\s+/g, ',');
         let numbers = [];
-        if(input.toUpperCase() === 'ALL') {
-            numbers = currentProfiles.map((_,i)=> i+1);
+        if (input.toUpperCase() === 'ALL') {
+            numbers = currentProfiles.map((_, i) => i+1);
         } else {
-            numbers = input.split(',').map(n=>parseInt(n.trim())).filter(n=> !isNaN(n));
+            numbers = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
         }
-        if(numbers.length === 0) { alert("No valid numbers"); return; }
+        if (numbers.length === 0) { alert("No valid numbers"); return; }
         await launchNumbers(numbers);
     }
 
@@ -391,14 +351,12 @@
                 body: JSON.stringify({ deviceId, numbers })
             });
             const data = await res.json();
-            if(data.success) alert(`✅ ${data.message}`);
-            else alert(`❌ ${data.message}`);
+            alert(data.success ? `✅ ${data.message}` : `❌ ${data.message}`);
         } catch(e) {
             alert("Launch request failed");
         }
     }
 
-    // ---------- SEND REQUEST TO ADMIN ----------
     async function sendRequestToAdmin() {
         const userName = document.getElementById('userName').value.trim() || "Anonymous user";
         try {
@@ -413,19 +371,15 @@
                 })
             });
             const data = await res.json();
-            if(data.success) {
-                alert("✅ Request sent to admin. Please wait.");
-                checkAccessStatus(); 
-            } else {
-                alert("❌ " + data.message);
-            }
+            alert(data.success ? "✅ Request sent to admin. Please wait." : "❌ " + data.message);
+            checkAccessStatus();
         } catch(e) { alert("Network error"); }
     }
 
-    // ---------- BAT FILE GENERATION (NO EXTERNAL REQUEST) ----------
-    function generateMainBat() {
+    // ==================== BAT FILE GENERATION (CLEAN) ====================
+    function getMainBatContent() {
         return `@echo off
-title Chrome Launcher Client (Always On)
+title Chrome Launcher Client
 color 0A
 setlocal enabledelayedexpansion
 echo.
@@ -445,11 +399,10 @@ if exist "%CONFIG_FILE%" (
     echo !DEVICE_ID! > "%CONFIG_FILE%"
 )
 
-:: Find Chrome
 set "CHROME_PATH="
-if exist "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-if exist "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-if exist "%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe"
+if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
 
 if "%CHROME_PATH%"=="" (
     echo [ERROR] Chrome not found. Install Chrome first.
@@ -457,24 +410,23 @@ if "%CHROME_PATH%"=="" (
     exit /b
 )
 
-:: Detect profiles
-set "PROFILES_DIR=%LOCALAPPDATA%\\Google\\Chrome\\User Data"
+set "PROFILES_DIR=%LOCALAPPDATA%\Google\Chrome\User Data"
 set PROFILE_COUNT=0
 set "PROFILE_JSON=["
-for /d %%D in ("%PROFILES_DIR%\\*") do (
-    if exist "%%D\\Preferences" (
+for /d %%D in ("%PROFILES_DIR%\*") do (
+    if exist "%%D\Preferences" (
         set /a PROFILE_COUNT+=1
         set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"
         set "PROFILE_NAME=%%~nxD"
-        for /f "tokens=3 delims=:" %%A in ('findstr /c:"\\"name\\"" "%%D\\Preferences" 2^>nul') do (
+        for /f "tokens=3 delims=:" %%A in ('findstr /c:"\"name\"" "%%D\Preferences" 2^>nul') do (
             set "PROFILE_NAME=%%~A"
-            set "PROFILE_NAME=!PROFILE_NAME:"=!"
-            set "PROFILE_NAME=!PROFILE_NAME:,=!"
+            set "PROFILE_NAME=!PROFILE_NAME:"=!
+            set "PROFILE_NAME=!PROFILE_NAME:,=!
         )
         if "%%~nxD"=="Default" set "PROFILE_NAME=Default"
         set "PROFILE_NAME_!PROFILE_COUNT!=!PROFILE_NAME!"
         if !PROFILE_COUNT! gtr 1 set "PROFILE_JSON=!PROFILE_JSON!,"
-        set "PROFILE_JSON=!PROFILE_JSON!{\\"name\\":\\"!PROFILE_NAME!\\",\\"folder\\":\\"%%~nxD\\",\\"hasPicture\\":false}"
+        set "PROFILE_JSON=!PROFILE_JSON!{\"name\":\"!PROFILE_NAME!\",\"folder\":\"%%~nxD\",\"hasPicture\":false}"
     )
 )
 set "PROFILE_JSON=!PROFILE_JSON!]"
@@ -486,27 +438,27 @@ echo Profiles: %PROFILE_COUNT%
 for /l %%i in (1,1,%PROFILE_COUNT%) do echo   [%%i] !PROFILE_NAME_%%i!
 echo.
 echo Registering device...
-powershell -Command "& { try { $body = '{\\"deviceId\\":\\"%DEVICE_ID%\\",\\"deviceName\\":\\"%COMPUTERNAME%\\",\\"profiles\\":%PROFILE_JSON%,\\"userName\\":\\"%USERNAME%\\"}'; Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 10 } catch { } }" >nul 2>&1
+powershell -Command "& { try { $body = '{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":%PROFILE_JSON%,\"userName\":\"%USERNAME%\"}'; Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 10 } catch { } }" >nul 2>&1
 echo [OK] Registered. Waiting for admin approval...
 echo.
 
 :status_loop
-for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\\"deviceId\\":\\"%DEVICE_ID%\\"}') -ContentType 'application/json'; $r.status } catch { 'error' } }" 2^>nul') do set "STATUS=%%a"
+for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json'; $r.status } catch { 'error' } }" 2^>nul') do set "STATUS=%%a"
 if "%STATUS%"=="approved" goto launch_loop
-if "%STATUS%"=="pending" (echo Waiting admin approval... & timeout /t 6 /nobreak >nul & goto status_loop)
-timeout /t 6 /nobreak >nul
+if "%STATUS%"=="pending" (echo Waiting admin approval... & timeout /t 5 /nobreak >nul & goto status_loop)
+timeout /t 5 /nobreak >nul
 goto status_loop
 
 :launch_loop
 echo.
 echo [APPROVED] Monitoring launch commands...
 :cmd_loop
-for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\\"deviceId\\":\\"%DEVICE_ID%\\"}') -ContentType 'application/json'; if ($r.success -and $r.commands) { $r.commands } } }" 2^>nul') do set "CMDS=%%a"
-echo %CMDS% | findstr "launch" >nul
+for /f "delims=" %%a in ('powershell -Command "& { try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json'; if ($r.success -and $r.commands) { $r.commands } } }" 2^>nul') do set "CMDS=%%a"
+echo !CMDS! | findstr "launch" >nul
 if not errorlevel 1 (
-    echo Launching...
+    echo Launching Chrome profiles...
     for /l %%i in (1,1,%PROFILE_COUNT%) do (
-        echo %CMDS% | findstr "%%i" >nul
+        echo !CMDS! | findstr "%%i" >nul
         if not errorlevel 1 (
             start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
         )
@@ -517,10 +469,9 @@ goto cmd_loop
 `;
     }
 
-    function generateAdminBat() {
+    function getAdminBatContent() {
         return `@echo off
 title Chrome Launcher Admin Bootstrap
-:: Request admin rights
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     powershell start -verb runas '%0'
@@ -530,7 +481,7 @@ echo Running with admin privileges...
 echo Creating stable client...
 set "CLIENT_FILE=%TEMP%\\chrome_client_stable.bat"
 (
-${generateMainBat().split('\n').map(l => `echo ${l.replace(/[&<>]/g, '^&')}`).join('\r\n')}
+${getMainBatContent().replace(/\n/g, '\r\n')}
 ) > "%CLIENT_FILE%"
 echo Starting client...
 call "%CLIENT_FILE%"
@@ -538,7 +489,6 @@ pause
 `;
     }
 
-    // DOWNLOAD HANDLERS (create & download bat)
     function downloadBat(filename, contentGenerator) {
         const content = contentGenerator();
         const blob = new Blob([content], { type: 'application/batch' });
@@ -552,18 +502,15 @@ pause
         URL.revokeObjectURL(url);
     }
 
-    document.getElementById('downloadMainBat').addEventListener('click', (e) => {
-        downloadBat('ChromeClient.bat', generateMainBat);
-        e.target.innerText = '✅ Downloaded! Save & Run as Admin';
-        setTimeout(() => e.target.innerText = '⬇️ 1. Download ChromeClient.bat (stable)', 2000);
+    // Event listeners
+    document.getElementById('downloadMainBat').addEventListener('click', () => {
+        downloadBat('ChromeClient.bat', getMainBatContent);
+        alert('✅ ChromeClient.bat downloaded! Run it as Administrator.');
     });
-
-    document.getElementById('downloadAdminBat').addEventListener('click', (e) => {
-        downloadBat('Run_As_Admin.bat', generateAdminBat);
-        e.target.innerText = '✅ Downloaded!';
-        setTimeout(() => e.target.innerText = '⬇️ 2. Download Run-As-Admin.bat (if CMD closes)', 2000);
+    document.getElementById('downloadAdminBat').addEventListener('click', () => {
+        downloadBat('Run_As_Admin.bat', getAdminBatContent);
+        alert('✅ Run_As_Admin.bat downloaded!');
     });
-
     document.getElementById('sendReqBtn').addEventListener('click', sendRequestToAdmin);
     document.getElementById('runBtn').addEventListener('click', launchProfilesFromInput);
     window.launchSingle = launchSingle;
@@ -571,12 +518,17 @@ pause
         document.getElementById('profileNumbers').value = val;
         launchProfilesFromInput();
     };
+    window.escapeHtml = (str) => str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 
-    // Init
     deviceId = getDeviceId();
-    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: <strong>${deviceId}</strong><br>(keep this for support)`;
+    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: <strong>${deviceId}</strong>`;
     checkAccessStatus();
-    if(statusInterval) clearInterval(statusInterval);
+    if (statusInterval) clearInterval(statusInterval);
     statusInterval = setInterval(checkAccessStatus, 7000);
 </script>
 </body>
