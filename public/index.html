@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome Profile Launcher - User Panel</title>
+    <title>Chrome Profile Launcher</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -65,25 +65,9 @@
             color: white;
             width: 100%;
         }
-        .btn-primary:hover {
-            background: #1e4a76;
-            transform: translateY(-2px);
-        }
-        .btn-download {
-            background: #2e7d32;
-            color: white;
-            margin: 5px 0;
-        }
-        .btn-warning {
-            background: #ff9800;
-            color: white;
-            margin: 5px 0;
-        }
-        .btn-danger {
-            background: #f44336;
-            color: white;
-            margin: 5px 0;
-        }
+        .btn-primary:hover { background: #1e4a76; transform: translateY(-2px); }
+        .btn-download { background: #2e7d32; color: white; margin: 5px 0; }
+        .btn-warning { background: #ff9800; color: white; margin: 5px 0; }
         .search-box {
             display: flex;
             gap: 10px;
@@ -187,14 +171,14 @@
         }
         .status-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 25px;
+            font-size: 13px;
             font-weight: bold;
         }
         .status-approved { background: #4caf50; color: white; }
         .status-pending { background: #ff9800; color: white; }
-        .status-none { background: #f44336; color: white; }
+        .status-none { background: #9e9e9e; color: white; }
         .flex-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
         .flex-buttons button { flex: 1; }
     </style>
@@ -225,10 +209,9 @@
         
         <div class="flex-buttons">
             <button id="checkStatusBtn" class="btn-warning">🔄 Check Status</button>
-            <button id="forceApproveBtn" class="btn-danger" style="display:none;">⚠️ Force Approve (Admin Only)</button>
         </div>
         
-        <div id="statusBadge" style="text-align: center; margin-top: 10px;"></div>
+        <div style="text-align: center; margin-top: 10px;" id="statusBadge"></div>
     </div>
 
     <div class="card" id="requestSection">
@@ -248,7 +231,8 @@
             4. <strong>Right-click</strong> → <strong>Run as Administrator</strong><br>
             5. Keep the black window open!<br>
             6. Click "Sync from CMD" and paste the Device ID from CMD<br>
-            7. Enter your name above and click "Send Request"
+            7. Enter your name above and click "Send Request"<br>
+            8. After admin approves, profiles will appear below
         </div>
 
         <div class="code-box" id="batCode">
@@ -406,9 +390,10 @@ goto cmd_loop
 
     <div class="card" id="launcherSection" style="display: none;">
         <h3>🚀 Launch Profiles</h3>
+        <p style="color: #4caf50; margin-bottom: 15px;">✅ Access Approved! Select profile numbers to launch.</p>
         <div class="search-box">
             <input type="text" id="profileNumbers" placeholder="Example: 1,2,3 or 1 2 3 or ALL">
-            <button onclick="launchProfiles()">▶ RUN</button>
+            <button id="runLaunchBtn">▶ RUN</button>
         </div>
         <div class="examples">
             💡 Try: 
@@ -421,7 +406,7 @@ goto cmd_loop
         </div>
     </div>
 
-    <footer>✅ Admin approves full device access (1-365 days) | Permanent Device ID</footer>
+    <footer>✅ Admin approves full device access (1-365 days)</footer>
 </div>
 
 <script>
@@ -482,7 +467,6 @@ goto cmd_loop
             localStorage.setItem('chrome_launcher_device_id', deviceId);
         } catch(e) {}
         document.getElementById('deviceIdSpan').innerHTML = deviceId;
-        updateStatusBadge('checking');
         checkStatus();
         return deviceId;
     }
@@ -492,23 +476,6 @@ goto cmd_loop
         if (cmdId && cmdId.trim()) {
             setDeviceIdManually(cmdId.trim());
             alert(`✅ Device ID synced: ${cmdId}\nChecking status...`);
-        }
-    }
-
-    function updateStatusBadge(status, expiresAt = null) {
-        const badgeDiv = document.getElementById('statusBadge');
-        if (status === 'approved') {
-            let timeText = '';
-            if (expiresAt) {
-                const expDate = new Date(expiresAt);
-                const daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
-                timeText = ` | Expires: ${expDate.toLocaleDateString()} (${daysLeft} days left)`;
-            }
-            badgeDiv.innerHTML = `<span class="status-badge status-approved">✅ APPROVED${timeText}</span>`;
-        } else if (status === 'pending') {
-            badgeDiv.innerHTML = `<span class="status-badge status-pending">⏳ PENDING - Waiting for Admin</span>`;
-        } else {
-            badgeDiv.innerHTML = `<span class="status-badge status-none">🔒 NO ACCESS - Send Request</span>`;
         }
     }
 
@@ -523,8 +490,6 @@ goto cmd_loop
         
         try {
             console.log('Checking status for device:', deviceId);
-            updateStatusBadge('checking');
-            
             const res = await fetch(`${API_BASE}/api/check-status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -542,7 +507,7 @@ goto cmd_loop
                     const daysLeft = Math.ceil((expDate - new Date()) / (1000*60*60*24));
                     document.getElementById('statusTime').innerHTML = `Expires: ${expDate.toLocaleDateString()} (${daysLeft} days left)`;
                 }
-                updateStatusBadge('approved', data.expiresAt);
+                document.getElementById('statusBadge').innerHTML = '<span class="status-badge status-approved">✅ APPROVED - Ready to launch</span>';
                 document.getElementById('requestSection').style.display = 'none';
                 document.getElementById('launcherSection').style.display = 'block';
                 await loadProfiles();
@@ -551,7 +516,7 @@ goto cmd_loop
                 document.getElementById('statusCard').style.background = '#fff3e0';
                 document.getElementById('statusIcon').innerHTML = '⏳';
                 document.getElementById('statusText').innerHTML = '⏳ Request Pending. Waiting for admin approval...';
-                updateStatusBadge('pending');
+                document.getElementById('statusBadge').innerHTML = '<span class="status-badge status-pending">⏳ PENDING - Waiting for Admin</span>';
                 document.getElementById('requestSection').style.display = 'block';
                 document.getElementById('launcherSection').style.display = 'none';
             }
@@ -559,14 +524,13 @@ goto cmd_loop
                 document.getElementById('statusCard').style.background = '#ffebee';
                 document.getElementById('statusIcon').innerHTML = '🔒';
                 document.getElementById('statusText').innerHTML = '🔒 No Access. Send request to admin.';
-                updateStatusBadge('none');
+                document.getElementById('statusBadge').innerHTML = '<span class="status-badge status-none">🔒 NO ACCESS - Send Request</span>';
                 document.getElementById('requestSection').style.display = 'block';
                 document.getElementById('launcherSection').style.display = 'none';
             }
         } catch(e) {
             console.error('Status check error:', e);
             document.getElementById('statusText').innerHTML = 'Error checking status. Check connection.';
-            updateStatusBadge('none');
         }
     }
 
@@ -589,7 +553,7 @@ goto cmd_loop
             }
         } catch(e) {
             console.error('Load profiles error:', e);
-            document.getElementById('profileList').innerHTML = '<div style="text-align:center; padding:20px;">❌ Error loading profiles</div>';
+            document.getElementById('profileList').innerHTML = '<div style="text-align:center; padding:20px;">❌ Error loading profiles. Make sure ChromeClient.bat is running.</div>';
         }
     }
 
@@ -602,38 +566,76 @@ goto cmd_loop
         let html = '';
         profiles.forEach((p, idx) => {
             html += `
-                <div class="profile-item" ondblclick="launchSingle(${idx+1})">
+                <div class="profile-item" onclick="selectAndLaunch(${idx+1})">
                     <div class="profile-num">${idx+1}</div>
                     <div style="font-size:28px;">${p.hasPicture ? '📷' : '👤'}</div>
                     <div style="flex:1">
                         <strong>${escapeHtml(p.name)}</strong><br>
                         <span style="font-size:11px; color:#888;">${p.folder}</span>
                     </div>
+                    <div style="color:#0f3460; font-size:12px;">▶ Click to launch</div>
                 </div>
             `;
         });
         container.innerHTML = html;
     }
 
-    async function launchSingle(num) {
+    // =============================================
+    // LAUNCH FUNCTIONS - Only when user clicks
+    // =============================================
+    async function selectAndLaunch(num) {
+        if (!currentProfiles.length) {
+            alert('No profiles loaded!');
+            return;
+        }
+        
+        const profile = currentProfiles[num-1];
+        if (!profile) {
+            alert('Invalid profile number');
+            return;
+        }
+        
+        const confirmLaunch = confirm(`Launch profile ${num}: ${profile.name}?`);
+        if (!confirmLaunch) return;
+        
         await launchNumbers([num]);
     }
 
     async function launchProfiles() {
         let input = document.getElementById('profileNumbers').value.trim();
-        if (!input) { alert('Enter profile numbers'); return; }
+        if (!input) { 
+            alert('Enter profile numbers (e.g., 1,2,3 or ALL)'); 
+            return; 
+        }
+        
         input = input.replace(/\s+/g, ',');
         let numbers = [];
+        
         if (input.toUpperCase() === 'ALL') {
             numbers = currentProfiles.map((_, i) => i+1);
         } else {
-            numbers = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+            numbers = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n > 0);
         }
-        if (numbers.length === 0) { alert('No valid numbers'); return; }
+        
+        if (numbers.length === 0) { 
+            alert('No valid numbers found. Example: 1,2,3'); 
+            return; 
+        }
+        
+        const confirmLaunch = confirm(`Launch ${numbers.length} profile(s): ${numbers.join(', ')}?`);
+        if (!confirmLaunch) return;
+        
         await launchNumbers(numbers);
     }
 
     async function launchNumbers(numbers) {
+        if (!deviceId) {
+            alert('Device ID not set!');
+            return;
+        }
+        
+        document.getElementById('statusText').innerHTML = '🚀 Sending launch command...';
+        
         try {
             const res = await fetch(`${API_BASE}/api/launch-request`, {
                 method: 'POST',
@@ -641,53 +643,45 @@ goto cmd_loop
                 body: JSON.stringify({ deviceId: deviceId, numbers: numbers })
             });
             const data = await res.json();
+            
             if (data.success) {
-                alert(`✅ ${data.message}`);
+                alert(`✅ Launch command sent! ${data.message}\nChrome will open shortly.`);
+                document.getElementById('statusText').innerHTML = '✅ Launch command sent!';
+                setTimeout(() => checkStatus(), 2000);
             } else {
-                alert(`❌ ${data.message}`);
+                alert(`❌ Failed: ${data.message}`);
+                document.getElementById('statusText').innerHTML = '❌ Launch failed. Try again.';
             }
         } catch(e) {
-            alert('Failed to send launch command');
+            console.error('Launch error:', e);
+            alert('Failed to send launch command. Check connection.');
+            document.getElementById('statusText').innerHTML = '❌ Connection error';
         }
     }
 
-    async function sendRequest() {
-        const userName = document.getElementById('userName').value.trim() || 'Anonymous';
+    async function forceCheckStatus() {
         if (!deviceId) {
-            alert('Device ID not set!');
+            alert('No Device ID set!');
             return;
         }
         
         try {
-            console.log('Sending request for device:', deviceId);
-            const res = await fetch(`${API_BASE}/api/request-access`, {
+            const response = await fetch(`${API_BASE}/api/check-status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    deviceId: deviceId,
-                    deviceName: navigator.userAgent,
-                    userName: userName,
-                    profiles: []
-                })
+                body: JSON.stringify({ deviceId: deviceId })
             });
-            const data = await res.json();
-            console.log('Request response:', data);
+            const data = await response.json();
+            console.log('Force check result:', data);
             
-            if (data.success) {
-                alert('✅ Request sent to admin!');
-                checkStatus();
-            } else {
-                alert('❌ ' + data.message);
-            }
+            let message = `Status: ${data.status.toUpperCase()}\n`;
+            if (data.expiresAt) message += `Expires: ${new Date(data.expiresAt).toLocaleString()}`;
+            alert(message);
+            
+            checkStatus();
         } catch(e) {
-            console.error('Send request error:', e);
-            alert('Network error: ' + e.message);
+            alert('Error: ' + e.message);
         }
-    }
-
-    async function refreshProfiles() {
-        await loadProfiles();
-        alert('Profiles refreshed!');
     }
 
     function setExample(val) {
@@ -721,34 +715,6 @@ goto cmd_loop
     }
 
     // =============================================
-    // FORCE CHECK - DIRECT API CALL
-    // =============================================
-    async function forceCheckStatus() {
-        if (!deviceId) {
-            alert('No Device ID set!');
-            return;
-        }
-        
-        try {
-            const response = await fetch(`${API_BASE}/api/check-status`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ deviceId: deviceId })
-            });
-            const data = await response.json();
-            console.log('Force check result:', data);
-            
-            let message = `Status: ${data.status}\n`;
-            if (data.expiresAt) message += `Expires: ${new Date(data.expiresAt).toLocaleString()}`;
-            alert(message);
-            
-            checkStatus(); // Refresh UI
-        } catch(e) {
-            alert('Error: ' + e.message);
-        }
-    }
-
-    // =============================================
     // INITIALIZATION
     // =============================================
     deviceId = getPermanentDeviceId();
@@ -758,11 +724,34 @@ goto cmd_loop
     document.getElementById('copyDeviceIdBtn').addEventListener('click', copyDeviceId);
     document.getElementById('syncFromCmdBtn').addEventListener('click', syncFromCmd);
     document.getElementById('copyBtn').addEventListener('click', copyBatCode);
-    document.getElementById('sendRequestBtn').addEventListener('click', sendRequest);
-    document.getElementById('refreshProfilesBtn')?.addEventListener('click', refreshProfiles);
-    document.getElementById('refreshProfilesBtn2')?.addEventListener('click', refreshProfiles);
+    document.getElementById('sendRequestBtn').addEventListener('click', async () => {
+        const userName = document.getElementById('userName').value.trim() || 'Anonymous';
+        try {
+            const res = await fetch(`${API_BASE}/api/request-access`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deviceId: deviceId,
+                    deviceName: navigator.userAgent,
+                    userName: userName,
+                    profiles: []
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('✅ Request sent to admin!');
+                checkStatus();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch(e) {
+            alert('Network error: ' + e.message);
+        }
+    });
     document.getElementById('checkStatusBtn').addEventListener('click', forceCheckStatus);
-    window.launchSingle = launchSingle;
+    document.getElementById('runLaunchBtn').addEventListener('click', launchProfiles);
+    
+    window.selectAndLaunch = selectAndLaunch;
     window.launchProfiles = launchProfiles;
     window.setExample = setExample;
     
