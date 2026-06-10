@@ -2,441 +2,743 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome Profile Launcher</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Chrome Profile Launcher - User Panel</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 900px; margin: 0 auto; }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
         .header {
             background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
             color: white;
-            padding: 30px;
+            padding: 28px;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Status Card */
+        .status-card {
+            background: white;
             border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .status-icon {
+            font-size: 52px;
+        }
+
+        .status-text {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .status-time {
+            font-size: 13px;
+            color: #6b7280;
+            font-family: monospace;
+        }
+
+        /* Common Card */
+        .request-card, .app-card {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .request-card h3, .app-card h3 {
+            font-size: 20px;
+            margin-bottom: 18px;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-info {
+            background: #f0fdf4;
+            padding: 18px;
+            border-radius: 18px;
+            margin: 18px 0;
+            border: 1px solid #bbf7d0;
+        }
+
+        .user-info label {
+            font-weight: 600;
+            color: #166534;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .user-info input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .user-info input:focus {
+            outline: none;
+            border-color: #0f3460;
+            box-shadow: 0 0 0 2px rgba(15,52,96,0.2);
+        }
+
+        .device-id {
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 10px 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            word-break: break-all;
+            color: #0f172a;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .profiles-preview {
+            background: #f8fafc;
+            padding: 0;
+            border-radius: 20px;
+            margin: 18px 0;
+            overflow: hidden;
+        }
+
+        /* Code & instruction block */
+        .code-block {
+            background: #1e1e2f;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 12px 0;
+            border: 1px solid #334155;
+        }
+
+        .copy-btn {
+            background: #2d3e5f;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #0f3460;
+        }
+
+        .instruction-step {
+            background: #0f172a;
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-top: 20px;
+            color: #e2e8f0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .instruction-step strong {
+            color: #facc15;
+        }
+
+        /* Search & Launch */
+        .search-box {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #0f3460;
+            outline: none;
+        }
+
+        .search-box button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #0f3460 0%, #1e4a76 100%);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .search-box button:hover {
+            transform: translateY(-2px);
+            background: #0f3460;
+        }
+
+        .examples {
+            font-size: 13px;
+            color: #4b5563;
             text-align: center;
             margin-bottom: 20px;
         }
-        .header h1 { font-size: 28px; margin-bottom: 8px; }
-        .status-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .status-icon { font-size: 48px; }
-        .status-text { flex: 1; font-size: 16px; font-weight: 500; }
-        .status-time { font-size: 12px; color: #666; }
-        .request-card, .app-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .user-info {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 12px;
-            margin: 15px 0;
-        }
-        .user-info input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-top: 8px;
-            font-size: 14px;
-        }
-        .device-id {
-            font-family: monospace;
-            background: #f5f5f5;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 11px;
-            word-break: break-all;
-        }
-        .profiles-preview {
-            background: #f0f4ff;
-            padding: 15px;
-            border-radius: 12px;
-            margin: 15px 0;
-        }
-        .profile-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
-        }
-        .search-box {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        .search-box input {
-            flex: 1;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .search-box button {
-            padding: 14px 28px;
-            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+
         .examples span {
-            background: #f0f0f0;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin: 0 5px;
+            background: #eef2ff;
+            padding: 5px 14px;
+            border-radius: 40px;
+            margin: 0 6px;
             cursor: pointer;
             display: inline-block;
             font-size: 12px;
+            transition: 0.2s;
         }
+
+        .examples span:hover {
+            background: #0f3460;
+            color: white;
+        }
+
         .profiles-list {
-            max-height: 400px;
+            max-height: 460px;
             overflow-y: auto;
-            margin-top: 20px;
+            margin-top: 10px;
         }
+
         .profile-card {
-            background: #fafafa;
-            border: 1px solid #e8e8e8;
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 10px;
+            background: #fafcff;
+            border: 1px solid #e2edff;
+            border-radius: 20px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 16px;
             cursor: pointer;
+            transition: 0.2s;
         }
+
         .profile-card:hover {
             background: #f0f4ff;
+            transform: translateX(5px);
             border-color: #0f3460;
         }
+
         .profile-number {
-            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            background: #0f3460;
             color: white;
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 18px;
         }
-        .profile-icon { font-size: 28px; }
-        .profile-info { flex: 1; }
-        .profile-name { font-weight: bold; }
-        .profile-folder { font-size: 11px; color: #999; font-family: monospace; }
+
+        .profile-icon {
+            font-size: 34px;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .profile-folder {
+            font-size: 11px;
+            color: #5b6e8c;
+            font-family: monospace;
+        }
+
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
             width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
         }
+
         .btn-primary {
-            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            background: #0f3460;
             color: white;
         }
-        .loading { text-align: center; padding: 40px; color: #999; }
+
+        .btn-primary:hover {
+            background: #1e4a76;
+            transform: translateY(-2px);
+        }
+
+        .loading, .error-message {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Chrome Profile Launcher</h1>
-            <p>Launch your Chrome profiles with admin approval</p>
-        </div>
 
-        <div class="status-card" id="statusCard">
-            <div class="status-icon" id="statusIcon">⏳</div>
-            <div class="status-text" id="statusText">Checking access status...</div>
-            <div class="status-time" id="statusTime"></div>
-        </div>
-
-        <div class="request-card" id="requestCard" style="display: none;">
-            <h3>📝 Request Access</h3>
-            <p>You need admin approval to use this tool.</p>
-            
-            <div class="user-info">
-                <label>👤 Your Name (optional):</label>
-                <input type="text" id="userName" placeholder="Enter your name">
-            </div>
-            
-            <div class="device-id" id="deviceIdDisplay"></div>
-            
-            <div class="profiles-preview" id="profilesPreview"></div>
-            
-            <button class="btn btn-primary" onclick="requestAccess()">📨 Send Request to Admin</button>
-        </div>
-
-        <div class="app-card" id="appCard" style="display: none;">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Enter profile numbers (e.g., 1,2,3 or 1 2 3)">
-                <button onclick="launchProfiles()">▶ RUN</button>
-            </div>
-            <div class="examples">
-                💡 Try: 
-                <span onclick="setExample('1,2,3')">1,2,3</span>
-                <span onclick="setExample('1 2 3')">1 2 3</span>
-                <span onclick="setExample('ALL')">ALL</span>
-            </div>
-            <div class="profiles-list" id="profilesList">
-                <div class="loading">🔄 Loading Chrome profiles...</div>
-            </div>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>🚀 Chrome Profile Launcher</h1>
+        <p>Launch your Chrome profiles after admin approval</p>
     </div>
 
-    <script>
-        let deviceId = null;
-        let profiles = [];
+    <!-- Status section -->
+    <div class="status-card" id="statusCard">
+        <div class="status-icon" id="statusIcon">⏳</div>
+        <div class="status-text" id="statusText">Checking access status...</div>
+        <div class="status-time" id="statusTime"></div>
+    </div>
 
-        // ডিভাইস আইডি জেনারেট বা রিট্রিভ
-        function getDeviceId() {
-            let id = localStorage.getItem('chrome_launcher_device_id');
-            if (!id) {
-                id = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-                localStorage.setItem('chrome_launcher_device_id', id);
-            }
-            return id;
-        }
+    <!-- Request section (visible when no access) -->
+    <div class="request-card" id="requestCard" style="display: none;">
+        <h3>📝 Request Access</h3>
+        <p style="margin-bottom: 8px;">You need admin approval to use this tool.</p>
 
-        async function loadProfilesFromLocal() {
-            // প্রোফাইল লোকালি ডিটেক্ট করার জন্য - এটা লোকাল ক্লায়েন্ট থেকে আসবে
-            // আপাতত আমরা দেখাবো যে ক্লায়েন্ট লাগবে
-            const container = document.getElementById('profilesPreview');
-            if (container) {
-                container.innerHTML = `
-                    <strong>📌 Note:</strong> To detect Chrome profiles, please download and run the Chrome Client.<br><br>
-                    <a href="/chrome-client.zip" style="color:#0f3460;">⬇️ Download Chrome Client</a>
-                `;
-            }
-            
-            const profilesContainer = document.getElementById('profilesList');
-            if (profilesContainer) {
-                profilesContainer.innerHTML = `
-                    <div class="loading">
-                        ⚠️ Chrome profiles will appear here after you run the Chrome Client.<br><br>
-                        <strong>Steps:</strong><br>
-                        1. Download Chrome Client from above<br>
-                        2. Extract and run "run-client.bat"<br>
-                        3. Enter your Device ID: ${deviceId}<br>
-                        4. Profiles will appear automatically!
-                    </div>
-                `;
-            }
-        }
+        <div class="user-info">
+            <label>👤 Your Name (optional but recommended):</label>
+            <input type="text" id="userName" placeholder="e.g., John Doe / Company Name">
+        </div>
 
-        async function registerDevice() {
-            const userName = document.getElementById('userName')?.value || 'Anonymous';
-            
-            try {
-                const response = await fetch('/api/register-device', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        deviceId: deviceId,
-                        deviceName: navigator.userAgent,
-                        profiles: [],
-                        userName: userName
-                    })
-                });
-                const data = await response.json();
-                console.log('Device registered:', data);
-            } catch(e) {
-                console.error(e);
-            }
-        }
+        <div class="device-id" id="deviceIdDisplay"></div>
 
-        async function requestAccess() {
-            const userName = document.getElementById('userName')?.value || 'Anonymous';
-            
-            try {
-                const response = await fetch('/api/request-access', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        deviceId: deviceId,
-                        deviceName: navigator.userAgent,
-                        userName: userName,
-                        profiles: [] // প্রোফাইল লোকাল ক্লায়েন্ট থেকে আসবে
-                    })
-                });
+        <!-- 📌 সরাসরি কোড দেখানো + ক্লায়েন্ট তৈরির নির্দেশনা -->
+        <div class="profiles-preview" id="profilesPreview">
+            <div style="background: #0f172a; color: #e2e8f0; padding: 20px; border-radius: 20px;">
+                <div style="color: #4ade80; font-weight: bold; margin-bottom: 12px;">⚙️ Step 1 — Create Chrome Client (one time)</div>
                 
-                const data = await response.json();
-                if (data.success) {
-                    alert('✅ Request sent to admin! Please wait for approval.');
-                    checkStatus();
-                } else {
-                    alert('❌ ' + data.message);
-                }
-            } catch(e) {
-                alert('❌ Error: ' + e.message);
-            }
-        }
-
-        async function checkStatus() {
-            try {
-                const response = await fetch('/api/check-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: deviceId })
-                });
-                const data = await response.json();
-                
-                if (data.status === 'approved') {
-                    document.getElementById('statusCard').style.background = '#e8f5e9';
-                    document.getElementById('statusIcon').innerHTML = '✅';
-                    document.getElementById('statusText').innerHTML = 'Access Approved! You can use the launcher.';
-                    document.getElementById('requestCard').style.display = 'none';
-                    document.getElementById('appCard').style.display = 'block';
-                    await loadDeviceProfiles();
-                } else if (data.status === 'pending') {
-                    document.getElementById('statusCard').style.background = '#fff3e0';
-                    document.getElementById('statusIcon').innerHTML = '⏳';
-                    document.getElementById('statusText').innerHTML = 'Request Pending. Waiting for admin approval...';
-                    document.getElementById('requestCard').style.display = 'none';
-                    document.getElementById('appCard').style.display = 'none';
-                } else {
-                    document.getElementById('statusCard').style.background = '#ffebee';
-                    document.getElementById('statusIcon').innerHTML = '🔒';
-                    document.getElementById('statusText').innerHTML = 'No Access. Send request to admin.';
-                    document.getElementById('requestCard').style.display = 'block';
-                    document.getElementById('appCard').style.display = 'none';
-                    await loadProfilesFromLocal();
-                }
-            } catch(e) {
-                console.error(e);
-            }
-        }
-
-        async function loadDeviceProfiles() {
-            try {
-                const response = await fetch('/api/get-device-profiles', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: deviceId })
-                });
-                const data = await response.json();
-                if (data.success && data.profiles.length > 0) {
-                    profiles = data.profiles;
-                    displayProfiles();
-                } else {
-                    document.getElementById('profilesList').innerHTML = `
-                        <div class="loading">📭 No profiles detected. Make sure Chrome Client is running.</div>
-                    `;
-                }
-            } catch(e) {
-                console.error(e);
-            }
-        }
-
-        function displayProfiles() {
-            const container = document.getElementById('profilesList');
-            if (!profiles || profiles.length === 0) {
-                container.innerHTML = '<div class="loading">📭 No Chrome profiles found</div>';
-                return;
-            }
-
-            let html = '';
-            profiles.forEach((profile, index) => {
-                html += `
-                    <div class="profile-card" ondblclick="launchSingleProfile(${index + 1})">
-                        <div class="profile-number">${index + 1}</div>
-                        <div class="profile-icon">${profile.hasPicture ? '📷' : '👤'}</div>
-                        <div class="profile-info">
-                            <div class="profile-name">${escapeHtml(profile.name)}</div>
-                            <div class="profile-folder">📁 ${profile.folder}</div>
-                        </div>
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #facc15; margin-bottom: 6px;">📄 File 1: <strong>chrome-client.js</strong></div>
+                    <div class="code-block" id="clientCodeBlock">
+const axios = require('axios');<br>
+const { exec } = require('child_process');<br>
+const fs = require('fs');<br>
+const path = require('path');<br>
+const os = require('os');<br>
+<br>
+const RAILWAY_URL = 'https://run11-production.up.railway.app';<br>
+const DEVICE_ID_FILE = path.join(os.homedir(), '.chrome_launcher_device_id.txt');<br>
+<br>
+function getDeviceId() {<br>
+    if (fs.existsSync(DEVICE_ID_FILE)) return fs.readFileSync(DEVICE_ID_FILE, 'utf8').trim();<br>
+    const newId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);<br>
+    fs.writeFileSync(DEVICE_ID_FILE, newId);<br>
+    return newId;<br>
+}<br>
+<br>
+function getChromePath() {<br>
+    const paths = [<br>
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',<br>
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',<br>
+        process.env.LOCALAPPDATA + '\\Google\\Chrome\\Application\\chrome.exe'<br>
+    ];<br>
+    for (const p of paths) if (fs.existsSync(p)) return p;<br>
+    return null;<br>
+}<br>
+<br>
+function getAllProfiles() {<br>
+    const profilesDir = path.join(process.env.LOCALAPPDATA, 'Google\\Chrome\\User Data');<br>
+    if (!fs.existsSync(profilesDir)) return [];<br>
+    const folders = fs.readdirSync(profilesDir);<br>
+    const profiles = [];<br>
+    for (const folder of folders) {<br>
+        const prefFile = path.join(profilesDir, folder, 'Preferences');<br>
+        if (fs.existsSync(prefFile)) {<br>
+            let name = folder;<br>
+            try { const data = fs.readFileSync(prefFile, 'utf8'); const match = data.match(/"name":"([^"]+)"/); if (match) name = match[1]; } catch(e) {}<br>
+            if (folder === 'Default') name = 'Default';<br>
+            const hasPicture = fs.existsSync(path.join(profilesDir, folder, 'Google Profile Picture.png'));<br>
+            profiles.push({ name, folder, hasPicture });<br>
+        }<br>
+    }<br>
+    return profiles;<br>
+}<br>
+<br>
+async function registerDevice(profiles) {<br>
+    try { await axios.post(`${RAILWAY_URL}/api/register-device`, { deviceId, deviceName: os.hostname(), profiles, userName: os.userInfo().username }); } catch(e) {}<br>
+}<br>
+<br>
+async function checkCommands() {<br>
+    try {<br>
+        const response = await axios.post(`${RAILWAY_URL}/api/get-commands`, { deviceId });<br>
+        if (response.data.success && response.data.commands.length) {<br>
+            const chromePath = getChromePath();<br>
+            if (!chromePath) return;<br>
+            for (const cmd of response.data.commands) {<br>
+                if (cmd.type === 'launch') {<br>
+                    const profiles = getAllProfiles();<br>
+                    for (const num of cmd.numbers) {<br>
+                        if (num >= 1 && num <= profiles.length) {<br>
+                            exec(`start "" "${chromePath}" --profile-directory="${profiles[num-1].folder}" "https://www.facebook.com"`);<br>
+                        }<br>
+                    }<br>
+                }<br>
+            }<br>
+        }<br>
+    } catch(e) {}<br>
+}<br>
+<br>
+const deviceId = getDeviceId();<br>
+console.log(`🆔 Device ID: ${deviceId}`);<br>
+console.log(`🌐 Server: ${RAILWAY_URL}`);<br>
+registerDevice(getAllProfiles());<br>
+setInterval(() => registerDevice(getAllProfiles()), 10000);<br>
+setInterval(checkCommands, 3000);<br>
                     </div>
-                `;
+                    <button class="copy-btn" onclick="copyCodeBlock('clientCodeBlock')">📋 Copy chrome-client.js</button>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #facc15; margin-bottom: 6px;">📄 File 2: <strong>run-client.bat</strong></div>
+                    <div class="code-block" id="batchCodeBlock">
+@echo off<br>
+title Chrome Launcher Client<br>
+color 0A<br>
+echo ========================================<br>
+echo    Chrome Launcher Client Setup<br>
+echo ========================================<br>
+where node >nul 2>nul<br>
+if %errorlevel% neq 0 (<br>
+    echo ❌ Node.js not installed! Download from https://nodejs.org/<br>
+    pause<br>
+    exit /b<br>
+)<br>
+echo 📦 Installing axios...<br>
+npm install axios<br>
+echo ✅ Ready!<br>
+echo.<br>
+echo 🚀 Starting Chrome Client...<br>
+node chrome-client.js<br>
+pause<br>
+                    </div>
+                    <button class="copy-btn" onclick="copyCodeBlock('batchCodeBlock')">📋 Copy run-client.bat</button>
+                </div>
+
+                <div class="instruction-step">
+                    <strong>📌 How to use (copy-paste method):</strong><br>
+                    1️⃣ Create a new folder on your Desktop: <strong>chrome-client</strong><br>
+                    2️⃣ Open Notepad → paste chrome-client.js code → save as <strong>chrome-client.js</strong><br>
+                    3️⃣ Again Notepad → paste run-client.bat code → save as <strong>run-client.bat</strong><br>
+                    4️⃣ Double-click <strong>run-client.bat</strong> → a window will show your Device ID<br>
+                    5️⃣ After that, click below <strong>"Send Request to Admin"</strong> button.<br>
+                    ✅ No download needed — just copy, paste, save!
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" id="sendRequestBtn" onclick="requestAccess()">📨 Send Request to Admin</button>
+    </div>
+
+    <!-- Main launcher (shown after approval) -->
+    <div class="app-card" id="appCard" style="display: none;">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Example: 1,2,3  or  1 2 3  or  ALL">
+            <button onclick="launchProfiles()">▶ RUN</button>
+        </div>
+        <div class="examples">
+            💡 Try: 
+            <span onclick="setExample('1,2,3')">1,2,3</span>
+            <span onclick="setExample('1 2 3')">1 2 3</span>
+            <span onclick="setExample('ALL')">ALL</span>
+        </div>
+        <div class="profiles-list" id="profilesList">
+            <div class="loading">🔄 Loading Chrome profiles...</div>
+        </div>
+    </div>
+    <footer>🔐 Admin approves time-limited access | Chrome profiles detected locally</footer>
+</div>
+
+<script>
+    // ------------------- Helper Functions -------------------
+    let deviceId = null;
+    let profiles = [];
+
+    function getDeviceIdFromLocal() {
+        let id = localStorage.getItem('chrome_launcher_device_id');
+        if (!id) {
+            id = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+            localStorage.setItem('chrome_launcher_device_id', id);
+        }
+        return id;
+    }
+
+    async function registerDeviceWithServer(userName) {
+        try {
+            await fetch('/api/register-device', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deviceId: deviceId,
+                    deviceName: navigator.userAgent,
+                    profiles: [],
+                    userName: userName || 'Anonymous'
+                })
             });
-            container.innerHTML = html;
+        } catch(e) { console.warn(e); }
+    }
+
+    async function requestAccess() {
+        const userName = document.getElementById('userName')?.value.trim() || 'Anonymous';
+        if (!userName || userName === 'Anonymous') {
+            if (!confirm("You didn't enter your name. Admin may not recognize you. Continue anyway?")) return;
         }
-
-        async function launchSingleProfile(number) {
-            await launchProfilesByNumbers([number]);
-        }
-
-        async function launchProfiles() {
-            let input = document.getElementById('searchInput').value.trim();
-            if (!input) {
-                alert('Please enter profile numbers!');
-                return;
-            }
-
-            input = input.replace(/\s+/g, ',');
-            input = input.replace(/,,+/g, ',');
-            document.getElementById('searchInput').value = input;
-
-            let numbers = [];
-            if (input.toUpperCase() === 'ALL') {
-                numbers = profiles.map((_, idx) => idx + 1);
+        try {
+            const response = await fetch('/api/request-access', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deviceId: deviceId,
+                    deviceName: navigator.userAgent,
+                    userName: userName,
+                    profiles: []
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('✅ Request sent to admin! Please wait for approval.');
+                checkStatusPeriodically();
             } else {
-                numbers = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+                alert('❌ ' + data.message);
             }
-
-            if (numbers.length === 0) {
-                alert('No valid numbers found!');
-                return;
-            }
-
-            await launchProfilesByNumbers(numbers);
+        } catch(e) {
+            alert('❌ Network error: ' + e.message);
         }
+    }
 
-        async function launchProfilesByNumbers(numbers) {
-            try {
-                const response = await fetch('/api/launch-request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: deviceId, numbers: numbers })
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    alert(`✅ ${data.message}`);
-                } else {
-                    alert(`❌ ${data.message}`);
+    async function checkStatus() {
+        try {
+            const response = await fetch('/api/check-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId: deviceId })
+            });
+            const data = await response.json();
+
+            if (data.status === 'approved') {
+                document.getElementById('statusCard').style.background = '#e6f7ec';
+                document.getElementById('statusIcon').innerHTML = '✅';
+                document.getElementById('statusText').innerHTML = 'Access Approved! You can launch profiles.';
+                if (data.expiresAt) {
+                    const expiryDate = new Date(data.expiresAt);
+                    document.getElementById('statusTime').innerHTML = `⏱️ Expires: ${expiryDate.toLocaleString()}`;
                 }
-            } catch(error) {
-                alert('❌ Launch failed!');
+                document.getElementById('requestCard').style.display = 'none';
+                document.getElementById('appCard').style.display = 'block';
+                await loadDeviceProfiles();
+            } else if (data.status === 'pending') {
+                document.getElementById('statusCard').style.background = '#fff3e0';
+                document.getElementById('statusIcon').innerHTML = '⏳';
+                document.getElementById('statusText').innerHTML = 'Request Pending. Waiting for admin approval...';
+                document.getElementById('requestCard').style.display = 'none';
+                document.getElementById('appCard').style.display = 'none';
+            } else {
+                document.getElementById('statusCard').style.background = '#ffe6e5';
+                document.getElementById('statusIcon').innerHTML = '🔒';
+                document.getElementById('statusText').innerHTML = 'No Access. Send request to admin.';
+                document.getElementById('requestCard').style.display = 'block';
+                document.getElementById('appCard').style.display = 'none';
+                await ensureDeviceRegistered();
             }
+        } catch(e) {
+            console.error("Status check failed", e);
         }
+    }
 
-        function setExample(value) {
-            document.getElementById('searchInput').value = value;
-            launchProfiles();
+    async function ensureDeviceRegistered() {
+        const userName = document.getElementById('userName')?.value || 'Anonymous';
+        await registerDeviceWithServer(userName);
+    }
+
+    async function loadDeviceProfiles() {
+        try {
+            const response = await fetch('/api/get-device-profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId: deviceId })
+            });
+            const data = await response.json();
+            if (data.success && data.profiles && data.profiles.length > 0) {
+                profiles = data.profiles;
+                displayProfiles(profiles);
+            } else {
+                document.getElementById('profilesList').innerHTML = `<div class="loading">📭 No profiles yet. Run the Chrome Client first.</div>`;
+            }
+        } catch(e) {
+            document.getElementById('profilesList').innerHTML = `<div class="loading">⚠️ Error loading profiles</div>`;
         }
+    }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+    function displayProfiles(profilesArray) {
+        const container = document.getElementById('profilesList');
+        if (!profilesArray.length) {
+            container.innerHTML = '<div class="loading">📭 No Chrome profiles found</div>';
+            return;
         }
+        let html = '';
+        profilesArray.forEach((p, idx) => {
+            html += `
+                <div class="profile-card" ondblclick="launchSingleProfile(${idx+1})">
+                    <div class="profile-number">${idx+1}</div>
+                    <div class="profile-icon">${p.hasPicture ? '📷' : '👤'}</div>
+                    <div class="profile-info">
+                        <div class="profile-name">${escapeHtml(p.name)}</div>
+                        <div class="profile-folder">📁 ${p.folder}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
 
-        // Initialize
-        deviceId = getDeviceId();
-        document.getElementById('deviceIdDisplay').innerHTML = `🆔 Device ID: ${deviceId}`;
-        registerDevice();
-        checkStatus();
-        
-        setInterval(checkStatus, 30000);
-    </script>
+    async function launchSingleProfile(num) {
+        await launchProfilesByNumbers([num]);
+    }
+
+    async function launchProfiles() {
+        let input = document.getElementById('searchInput').value.trim();
+        if (!input) {
+            alert("Please enter profile numbers");
+            return;
+        }
+        input = input.replace(/\s+/g, ',');
+        input = input.replace(/,,+/g, ',');
+        document.getElementById('searchInput').value = input;
+
+        let numbers = [];
+        if (input.toUpperCase() === 'ALL') {
+            numbers = profiles.map((_, idx) => idx+1);
+        } else {
+            numbers = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        }
+        if (numbers.length === 0) {
+            alert("No valid numbers");
+            return;
+        }
+        await launchProfilesByNumbers(numbers);
+    }
+
+    async function launchProfilesByNumbers(numbers) {
+        try {
+            const response = await fetch('/api/launch-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId, numbers })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`✅ ${data.message}`);
+            } else {
+                alert(`❌ ${data.message}`);
+            }
+        } catch(e) {
+            alert("❌ Failed to send launch command");
+        }
+    }
+
+    function setExample(value) {
+        document.getElementById('searchInput').value = value;
+        launchProfiles();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function copyCodeBlock(elementId) {
+        const element = document.getElementById(elementId);
+        let rawText = element.innerText;
+        navigator.clipboard.writeText(rawText).then(() => {
+            alert('✅ Code copied to clipboard!');
+        }).catch(() => {
+            alert('⚠️ Could not copy, but you can select manually.');
+        });
+    }
+
+    let intervalId = null;
+    function checkStatusPeriodically() {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(checkStatus, 7000);
+    }
+
+    // ------------------- INIT -------------------
+    deviceId = getDeviceIdFromLocal();
+    document.getElementById('deviceIdDisplay').innerHTML = `🆔 Your Device ID:<br> <strong style="font-size:14px;">${deviceId}</strong>`;
+    checkStatus();
+    checkStatusPeriodically();
+</script>
 </body>
 </html>
