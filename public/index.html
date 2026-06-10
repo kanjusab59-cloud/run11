@@ -151,7 +151,6 @@
             line-height: 1.6;
         }
         footer { text-align: center; font-size: 11px; color: #aaa; margin-top: 20px; }
-        .debug-info { background: #1e1e1e; color: #0f0; font-family: monospace; font-size: 10px; padding: 10px; border-radius: 8px; margin-top: 10px; max-height: 100px; overflow: auto; }
     </style>
 </head>
 <body>
@@ -238,7 +237,6 @@
                 body: JSON.stringify({ deviceId })
             });
             const data = await res.json();
-            console.log('Status response:', data);
 
             if (data.status === 'approved') {
                 document.getElementById('statusCard').style.background = '#e8f5e9';
@@ -395,7 +393,7 @@
         });
     }
 
-    // ============= FIXED BAT FILE =============
+    // ============= SIMPLE WORKING BAT FILE =============
     function getChromeClientBat() {
         return `@echo off
 title Chrome Launcher Client
@@ -404,12 +402,12 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ==============================================
-echo      Chrome Launcher Client v3.0
+echo      Chrome Launcher Client
 echo ==============================================
 echo.
 
 set "SERVER_URL=${API_BASE}"
-set "CONFIG_FILE=%USERPROFILE%\\.chrome_device_id.txt"
+set "CONFIG_FILE=%USERPROFILE%\\.chrome_device.txt"
 
 if exist "%CONFIG_FILE%" (
     set /p DEVICE_ID=<"%CONFIG_FILE%"
@@ -418,99 +416,123 @@ if exist "%CONFIG_FILE%" (
     echo !DEVICE_ID! > "%CONFIG_FILE%"
 )
 
-:: Find Chrome
+:: Find Chrome - Multiple locations
 set "CHROME_PATH="
 if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
 if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
 if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
+if exist "%USERPROFILE%\AppData\Local\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%USERPROFILE%\AppData\Local\Google\Chrome\Application\chrome.exe"
 
 if "%CHROME_PATH%"=="" (
-    echo [ERROR] Chrome not found!
-    pause
-    exit /b
+    echo [ERROR] Chrome not found in any location!
+    echo.
+    echo Please manually enter Chrome path:
+    set /p "CHROME_PATH=Chrome Path: "
 )
+
+echo [OK] Chrome: %CHROME_PATH%
+echo.
 
 :: Detect profiles
 set "PROFILES_DIR=%LOCALAPPDATA%\Google\Chrome\User Data"
+if not exist "%PROFILES_DIR%" set "PROFILES_DIR=%USERPROFILE%\AppData\Local\Google\Chrome\User Data"
+
 set PROFILE_COUNT=0
+set "PROFILE_LIST="
 
 for /d %%D in ("%PROFILES_DIR%\*") do (
     if exist "%%D\Preferences" (
         set /a PROFILE_COUNT+=1
         set "PROFILE_FOLDER_!PROFILE_COUNT!=%%~nxD"
-        set "PROFILE_NAME_!PROFILE_COUNT!=%%~nxD"
+        
+        :: Get profile name from Preferences
+        set "PROFILE_NAME=%%~nxD"
+        for /f "tokens=3 delims=:" %%A in ('findstr /c:"\"name\"" "%%D\Preferences" 2^>nul') do (
+            set "PROFILE_NAME=%%~A"
+            set "PROFILE_NAME=!PROFILE_NAME:"=!
+            set "PROFILE_NAME=!PROFILE_NAME:,=!
+        )
+        if "%%~nxD"=="Default" set "PROFILE_NAME=Default"
+        set "PROFILE_NAME_!PROFILE_COUNT!=!PROFILE_NAME!"
+        
+        echo [!PROFILE_COUNT!] !PROFILE_NAME!
     )
 )
 
-cls
+echo.
 echo ==============================================
 echo  Device ID: %DEVICE_ID%
-echo  Server: %SERVER_URL%
-echo  Chrome: %CHROME_PATH%
 echo  Profiles Found: %PROFILE_COUNT%
 echo ==============================================
 echo.
 
-:: Register device
-echo [1/2] Registering device...
-powershell -Command "$body = '{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":[],\"userName\":\"%USERNAME%\"}'; try { Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 10 } catch { }" >nul 2>&1
+:: Register device with profiles
+echo [1/3] Registering device...
+set "PROFILES_JSON=["
+for /l %%i in (1,1,%PROFILE_COUNT%) do (
+    if %%i gtr 1 set "PROFILES_JSON=!PROFILES_JSON!,"
+    set "PROFILES_JSON=!PROFILES_JSON!{\"name\":\"!PROFILE_NAME_%%i!\",\"folder\":\"!PROFILE_FOLDER_%%i!\",\"hasPicture\":false}"
+)
+set "PROFILES_JSON=!PROFILES_JSON!]"
+
+powershell -Command "$body = '{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"profiles\":%PROFILES_JSON%,\"userName\":\"%USERNAME%\"}'; try { Invoke-RestMethod -Uri '%SERVER_URL%/api/register-device' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 15 } catch { Write-Host 'Registration error' }" >nul 2>&1
 echo [OK] Device Registered!
 echo.
 
-echo [2/2] Checking approval status...
+echo [2/3] Sending request to admin...
+powershell -Command "$body = '{\"deviceId\":\"%DEVICE_ID%\",\"deviceName\":\"%COMPUTERNAME%\",\"userName\":\"%USERNAME%\",\"profiles\":%PROFILES_JSON%}'; try { Invoke-RestMethod -Uri '%SERVER_URL%/api/request-access' -Method POST -Body $body -ContentType 'application/json' -TimeoutSec 15 } catch { }" >nul 2>&1
+echo [OK] Request sent!
 echo.
 
-:check_approval
-for /f "delims=" %%a in ('powershell -Command "try { (Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json' -TimeoutSec 10).status } catch { 'error' }" 2^>nul') do set "STATUS=%%a"
+echo [3/3] Waiting for admin approval...
+echo.
 
-echo [DEBUG] Status: %STATUS%
+:wait_loop
+set "STATUS="
+for /f %%a in ('powershell -Command "try { (Invoke-RestMethod -Uri '%SERVER_URL%/api/check-status' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json' -TimeoutSec 10).status } catch { 'none' }" 2^>nul') do set "STATUS=%%a"
 
 if "%STATUS%"=="approved" (
     echo.
     echo ==============================================
-    echo  APPROVED! Monitoring for launch commands...
+    echo  APPROVED! Ready to launch profiles
     echo ==============================================
     echo.
     goto monitor
 )
 
 if "%STATUS%"=="pending" (
-    echo Waiting for admin approval... (Pending)
+    echo Waiting for admin approval... (pending)
     timeout /t 5 /nobreak >nul
-    goto check_approval
+    goto wait_loop
 )
 
-if "%STATUS%"=="error" (
-    echo Checking again...
-    timeout /t 3 /nobreak >nul
-    goto check_approval
-)
-
-echo Unknown status: %STATUS% - retrying...
-timeout /t 3 /nobreak >nul
-goto check_approval
+echo Checking status... (%STATUS%)
+timeout /t 5 /nobreak >nul
+goto wait_loop
 
 :monitor
 echo Monitoring for launch commands...
 echo.
 
-:command_loop
+:cmd_loop
 for /f "delims=" %%a in ('powershell -Command "try { $r = Invoke-RestMethod -Uri '%SERVER_URL%/api/get-commands' -Method POST -Body ('{\"deviceId\":\"%DEVICE_ID%\"}') -ContentType 'application/json' -TimeoutSec 10; if($r.success -and $r.commands) { $r.commands } }" 2^>nul') do set "CMDS=%%a"
 
 if not "%CMDS%"=="" (
+    echo.
     echo Launch command received!
     for /l %%i in (1,1,%PROFILE_COUNT%) do (
         echo !CMDS! | findstr "%%i" >nul
         if not errorlevel 1 (
-            echo   Opening profile %%i
+            echo   Launching profile %%i: !PROFILE_NAME_%%i!
             start "" "%CHROME_PATH%" --profile-directory="!PROFILE_FOLDER_%%i!" "https://www.facebook.com"
             timeout /t 2 /nobreak >nul
         )
     )
+    echo.
 )
 
 timeout /t 3 /nobreak >nul
-goto command_loop
+goto cmd_loop
 `;
     }
 
